@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.pms.mapper.PmsSpuMapper">
+
+    <resultMap id="BaseResultMap" type="com.deko.mall.pms.model.vo.PmsSpuPageVO">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+        <result property="brandId" column="brand_id" jdbcType="BIGINT"/>
+        <result property="originPrice" column="origin_price" jdbcType="BIGINT"/>
+        <result property="price" column="price" jdbcType="BIGINT"/>
+        <result property="sales" column="sales" jdbcType="INTEGER"/>
+        <result property="picUrl" column="pic_url" jdbcType="VARCHAR"/>
+        <result property="spuType" column="spu_type" jdbcType="VARCHAR"/>
+        <result property="album" column="album"
+                typeHandler="com.deko.mall.common.mybatis.handler.StringArrayJsonTypeHandler"/>
+        <result property="unit" column="unit" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="detail" column="detail" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="auditStatus" column="audit_status" jdbcType="TINYINT"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="freightTemplateId" column="freight_template_id" jdbcType="BIGINT"/>
+        <result property="forbiddenAreaId" column="forbidden_area_id" jdbcType="BIGINT"/>
+
+        <result property="supplierId" column="supplier_id" jdbcType="BIGINT"/>
+        <result property="auditUser" column="audit_user" jdbcType="VARCHAR"/>
+        <result property="submitTime" column="submit_time" jdbcType="TIMESTAMP"/>
+        <result property="auditTime" column="audit_time" jdbcType="TIMESTAMP"/>
+
+
+        <result property="categoryName" column="categoryName" jdbcType="VARCHAR"/>
+        <result property="brandName" column="brandName" jdbcType="VARCHAR"/>
+        <collection property="skuList" column="id" select="com.deko.mall.pms.mapper.PmsSkuMapper.getSkuListBySpuId">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="skuSn" column="sku_sn" jdbcType="VARCHAR"/>
+            <result property="picUrl" column="pic_url" jdbcType="VARCHAR"/>
+            <result property="specIds" column="spec_ids" jdbcType="VARCHAR"/>
+            <result property="supplyPrice" column="supply_price" jdbcType="BIGINT"/>
+            <result property="retailPrice" column="retail_price" jdbcType="BIGINT"/>
+            <result property="stock" column="stock" jdbcType="INTEGER"/>
+            <result property="lockedStock" column="locked_stock" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+
+    <!--Admin-商品分页列表-->
+    <select id="listPagedSpu" resultMap="BaseResultMap">
+        SELECT
+        t1.id,
+        t1.name,
+        t1.category_id,
+        t1.brand_id,
+        t1.pic_url,
+        (
+        SELECT MIN(retail_price)
+        FROM pms_sku
+        WHERE spu_id = t1.id
+        AND deleted = 0
+        ) AS price,
+        (
+        SELECT MIN(market_price)
+        FROM pms_sku
+        WHERE spu_id = t1.id
+        AND deleted = 0
+        )  AS origin_price,
+        t1.sales,
+        t1.unit,
+        t1.detail,
+        t1.description,
+        t1.spu_type,
+        t1.supplier_id,
+        t5.supplier_name AS supplierName,
+        t3.NAME categoryName,
+        t4.NAME brandName,
+        t1.audit_status,
+        t1.submit_time,
+        t1.audit_time,
+        t1.audit_user,
+        t1.remark,
+        t1.freight_template_id,
+        t1.forbidden_area_id,
+        t1.status,
+        t1.need_delivery
+        FROM pms_spu t1
+        LEFT JOIN pms_category t3 ON t1.category_id = t3.id
+        LEFT JOIN pms_brand t4 ON t1.brand_id = t4.id
+        LEFT JOIN pms_supplier t5 ON t1.supplier_id = t5.id
+        <where>
+            and t1.deleted = 0
+            <if test='queryParams.keywords!=null and queryParams.keywords.trim() neq ""'>
+                AND t1.name like concat('%',#{queryParams.keywords},'%')
+            </if>
+            <if test='queryParams.name!=null and queryParams.name.trim() neq ""'>
+                AND t1.name like concat('%',#{queryParams.name},'%')
+            </if>
+            <if test="queryParams.categoryId!=null">
+                AND t1.category_id =#{queryParams.categoryId}
+            </if>
+            <if test="queryParams.brandId!=null">
+                AND t1.brand_id = #{queryParams.brandId}
+            </if>
+            <if test="queryParams.spuType!=null">
+                AND t1.spu_type = #{queryParams.spuType}
+            </if>
+            <if test="queryParams.auditStatus!=null and queryParams.auditStatus!=''">
+                AND t1.audit_status = #{queryParams.auditStatus}
+            </if>
+            <if test="queryParams.status!=null">
+                AND t1.status = #{queryParams.status}
+            </if>
+            <if test="queryParams.supplierId!=null">
+                AND t1.supplier_id = #{queryParams.supplierId}
+            </if>
+            <if test="queryParams.spuId!=null">
+                AND t1.id = #{queryParams.spuId}
+            </if>
+            <if test="queryParams.skuId!=null">
+                AND EXISTS (
+                    SELECT 1 FROM pms_sku sku 
+                    WHERE sku.spu_id = t1.id 
+                    AND sku.deleted = 0 
+                    AND sku.id = #{queryParams.skuId}
+                )
+            </if>
+        </where>
+        ORDER BY
+        t1.update_time DESC,
+        t1.create_time DESC
+    </select>
+
+
+    <!--「应用端」商品分页列表-->
+    <select id="listPagedSpuForApp" resultType="com.deko.mall.pms.model.vo.SpuPageVO">
+        SELECT
+        s.id,
+        s.name,
+        s.pic_url AS picUrl,
+        s.description AS simpleDesc,
+        (
+        SELECT MIN(retail_price)
+        FROM pms_sku
+        WHERE spu_id = s.id
+        AND deleted = 0
+        )  AS price,
+        (
+        SELECT MIN(market_price)
+        FROM pms_sku
+        WHERE spu_id = s.id
+        AND deleted = 0
+        )  AS originPrice,
+        s.sales,
+        s.spu_type AS spuType,
+        CASE s.spu_type
+        WHEN 'NORMAL' THEN '普通商品'
+        ELSE '普通商品'
+        END AS spuTypeDesc,
+        c3.name AS categoryName,
+        b.name AS brandName,
+        (SELECT MIN(id) FROM pms_sku WHERE spu_id = s.id AND deleted = 0) AS defaultSkuId,
+        (SELECT CASE WHEN COUNT(1) > 1 THEN 1 ELSE 0 END FROM pms_sku WHERE spu_id = s.id AND deleted = 0) AS isExistManySpec
+        FROM
+        `pms_spu` s
+        LEFT JOIN pms_category c3 ON s.category_id = c3.id AND c3.level = 3
+        LEFT JOIN pms_category c2 ON c3.parent_id = c2.id AND c2.level = 2
+        LEFT JOIN pms_brand b ON s.brand_id = b.id
+        LEFT JOIN pms_shop sh ON sh.owner_type = 'SUPPLIER' AND sh.owner_id = s.supplier_id AND sh.deleted = 0
+        <where>
+            AND s.status = 1 AND s.deleted = 0
+            <!-- 店铺关闭的商品不暴露（有供应商的商品必须店铺开启，无供应商的商品不受影响） -->
+            AND (s.supplier_id IS NULL OR (sh.id IS NOT NULL AND sh.status = 1))
+
+            <if test='queryParams.keywords!=null and queryParams.keywords.trim() neq ""'>
+                AND s.name like concat('%',#{queryParams.keywords},'%')
+            </if>
+            <if test='queryParams.categoryId != null'>
+                <!-- 自动识别分类层级，无需传 categoryLevel -->
+                AND s.category_id IN (
+                    SELECT c3.id FROM pms_category c3
+                    WHERE c3.level = 3
+                    AND (
+                        c3.id = #{queryParams.categoryId}
+                        OR c3.parent_id = #{queryParams.categoryId}
+                        OR c3.parent_id IN (
+                            SELECT c2.id FROM pms_category c2
+                            WHERE c2.parent_id = #{queryParams.categoryId} AND c2.level = 2
+                        )
+                    )
+                )
+            </if>
+            <if test='queryParams.brandId != null'>
+                AND s.brand_id = #{queryParams.brandId}
+            </if>
+            <if test='queryParams.minPrice != null'>
+                AND EXISTS (
+                    SELECT 1 FROM pms_sku
+                    WHERE spu_id = s.id
+                    AND deleted = 0
+                    AND retail_price &gt;= #{queryParams.minPrice}
+                )
+            </if>
+            <if test='queryParams.maxPrice != null and queryParams.maxPrice > 0'>
+                AND EXISTS (
+                    SELECT 1 FROM pms_sku
+                    WHERE spu_id = s.id
+                    AND deleted = 0
+                    AND retail_price &lt;= #{queryParams.maxPrice}
+                )
+            </if>
+            <if test='queryParams.spuType != null and queryParams.spuType.trim() neq ""'>
+                AND s.spu_type = #{queryParams.spuType}
+            </if>
+            <!-- 原有条件 -->
+            <if test="queryParams.spuTypes != null and queryParams.spuTypes.size() > 0">
+                AND s.spu_type IN
+                <foreach collection="queryParams.spuTypes" item="type" open="(" separator="," close=")">
+                    #{type}
+                </foreach>
+            </if>
+            <!-- 店铺商品：按店铺ID过滤（用户侧统一按店铺） -->
+            <if test='queryParams.shopId != null'>
+                AND s.shop_id = #{queryParams.shopId}
+            </if>
+            <!-- 店铺商品：按供应商过滤（兼容供应链场景） -->
+            <if test='queryParams.supplierId != null'>
+                AND s.supplier_id = #{queryParams.supplierId}
+            </if>
+        </where>
+        ORDER BY
+        <if test='queryParams.sortField!=null and queryParams.sortField.trim() neq "" and queryParams.sortField !=null and queryParams.sort.trim() neq ""'>
+            ${queryParams.sortField} ${queryParams.sort} ,
+        </if>
+        s.create_time desc
+    </select>
+
+
+    <update id="incrementSales">
+        UPDATE `pms_spu`
+        SET real_sales = real_sales + #{quantity},
+            sales     = sales + #{quantity}
+        WHERE id = #{spuId}
+          and deleted = 0
+    </update>
+
+    <!-- 批量查询SPU信息（包含SKU最低价） -->
+    <select id="listSpuWithMinPrice" resultType="java.util.Map">
+        SELECT
+        t1.id,
+        t1.name,
+        t1.category_id,
+        t1.brand_id,
+        t1.pic_url,
+        (
+        SELECT MIN(retail_price)
+        FROM pms_sku
+        WHERE spu_id = t1.id
+        AND deleted = 0
+        ) AS price,
+        (
+        SELECT MIN(market_price)
+        FROM pms_sku
+        WHERE spu_id = t1.id
+        AND deleted = 0
+        ) AS origin_price,
+        COALESCE((
+        SELECT SUM(stock)
+        FROM pms_sku
+        WHERE spu_id = t1.id
+        AND deleted = 0
+        ), 0) AS total_stock,
+        t1.sales,
+        t1.real_sales,
+        t1.virtual_sales,
+        t1.unit,
+        t1.detail,
+        t1.description,
+        t1.spu_type,
+        CASE t1.spu_type
+        WHEN 'NORMAL' THEN '普通商品'
+        ELSE '普通商品'
+        END AS spu_type_desc,
+        t1.status
+        FROM pms_spu t1
+        WHERE t1.deleted = 0
+        AND t1.id IN
+        <foreach collection="spuIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY FIELD(t1.id
+        <foreach collection="spuIds" item="id">
+            ,#{id}
+        </foreach>)
+    </select>
+
+
+    <!-- 查询搜索结果中出现的去重品牌ID -->
+    <select id="selectDistinctBrandIds" resultType="java.lang.Long">
+        SELECT DISTINCT s.brand_id
+        FROM pms_spu s
+        WHERE s.status = 1 AND s.deleted = 0 AND s.brand_id IS NOT NULL
+        <if test="keywords != null and keywords.trim() neq ''">
+            AND s.name LIKE CONCAT('%', #{keywords}, '%')
+        </if>
+        <if test="categoryId != null">
+            AND s.category_id IN (
+                SELECT c3.id FROM pms_category c3
+                WHERE c3.level = 3
+                AND (
+                    c3.id = #{categoryId}
+                    OR c3.parent_id = #{categoryId}
+                    OR c3.parent_id IN (
+                        SELECT c2.id FROM pms_category c2
+                        WHERE c2.parent_id = #{categoryId} AND c2.level = 2
+                    )
+                )
+            )
+        </if>
+    </select>
+
+</mapper>

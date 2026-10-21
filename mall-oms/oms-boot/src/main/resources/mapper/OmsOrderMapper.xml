@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.oms.mapper.OrderMapper">
+    <resultMap id="OrderMap" type="com.deko.mall.oms.model.bo.OrderBO">
+        <result column="use_points_amount" property="usePointsAmount"/>
+        <result column="points_deduction_amount" property="pointsDeductionAmount"/>
+        <result column="coupon_id" property="couponId"/>
+        <result column="coupon_amount" property="couponAmount"/>
+        <result column="payment_channel_no" property="paymentChannelNo"/>
+        <result column="channel_trade_no" property="channelTradeNo"/>
+        <collection property="orderItems"
+                    column="{orderId=id}"
+                    select="com.deko.mall.oms.mapper.OrderItemMapper.getOrderItemsByOrderId">
+        </collection>
+    </resultMap>
+    <!-- 订单分页列表 -->
+    <select id="getOrderPage" resultMap="OrderMap">
+        SELECT
+        t1.id,
+        t1.order_no,
+        t1.payment_no,
+        t1.payment_channel_no,
+        t1.channel_trade_no,
+        t1.order_type,
+        t1.order_scene,
+        t1.total_amount,
+        t1.payment_amount,
+        t1.pay_channel,
+        t1.shop_id AS shop_id,
+        t1.shop_name AS shop_name,
+        t6.logo AS shop_logo,
+        t1.status,
+        t1.member_id,
+        t1.total_quantity,
+        t1.create_time,
+        t1.source,
+        t1.remark,
+        t1.freight_amount,
+        t1.cancel_time,
+        t1.refund_time,
+        t1.delivery_time,
+        t1.receive_time,
+        t1.need_delivery,
+        t1.payment_time,
+        t3.user_name AS receiver_name,
+        t3.user_phone AS receiver_phone,
+        t3.province_name AS receiver_province,
+        t3.city_name AS receiver_city,
+        t3.area_name AS receiver_district,
+        t3.address AS receiver_address,
+        t3.complete_address AS receiver_complete_address,
+        t1.buyer_phone AS buyer_phone,
+        t5.carrier_name AS carrier_name,
+        t5.tracking_no AS tracking_no,
+        t1.use_points_amount,
+        t1.points_deduction_amount,
+        t1.coupon_id,
+        t1.coupon_amount
+        FROM
+        oms_order t1
+        LEFT JOIN oms_order_address t3 ON t1.id = t3.order_id AND t3.receive_address_type = 'USER_RECEIVE'
+        LEFT JOIN oms_order_delivery t5 ON t1.id = t5.order_id
+        LEFT JOIN pms_shop t6 ON t1.shop_id = t6.id
+        <where>
+            <if test='queryParams.keywords !=null and queryParams.keywords.trim() neq ""'>
+                AND
+                (
+                t1.order_no LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND (oi.sku_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                           OR oi.spu_name LIKE CONCAT('%', #{queryParams.keywords}, '%'))
+                )
+                )
+            </if>
+            <if test='queryParams.status !=null and queryParams.status.size() gt 0'>
+                AND t1.status IN
+                <foreach collection='queryParams.status' item='item' open='(' separator=',' close=')'>
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryParams.beginDate !=null'>
+                AND t1.create_time &gt;= #{queryParams.beginDate}
+            </if>
+            <if test='queryParams.endDate !=null'>
+                AND t1.create_time &lt;= #{queryParams.endDate}
+            </if>
+            <if test='queryParams.deliveryEndDate !=null'>
+                AND t1.delivery_time &lt;= #{queryParams.deliveryEndDate}
+            </if>
+            <if test='queryParams.receiveBeginDate !=null'>
+                AND t1.receive_time &gt;= #{queryParams.receiveBeginDate}
+            </if>
+            <if test='queryParams.receiveEndDate !=null'>
+                AND t1.receive_time &lt;= #{queryParams.receiveEndDate}
+            </if>
+            <if test='queryParams.spuId !=null'>
+                AND EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND oi.spu_id = #{queryParams.spuId}
+                )
+            </if>
+            <if test='queryParams.phone !=null and queryParams.phone.trim() neq ""'>
+                AND t1.buyer_phone = #{queryParams.phone}
+            </if>
+            <if test='queryParams.supplierId !=null'>
+                AND EXISTS (
+                    SELECT 1 FROM oms_order_item oi2
+                    WHERE oi2.order_id = t1.id AND oi2.deleted = 0
+                      AND oi2.supplier_id = #{queryParams.supplierId}
+                )
+            </if>
+            <if test='queryParams.memberId !=null'>
+                AND t1.member_id = #{queryParams.memberId}
+            </if>
+            <if test='queryParams.payChannel !=null and queryParams.payChannel.trim() neq "" '>
+                AND t1.pay_channel = #{queryParams.payChannel}
+            </if>
+            <if test='queryParams.paymentNo !=null and queryParams.paymentNo.trim() neq "" '>
+                AND t1.payment_no = #{queryParams.paymentNo}
+            </if>
+            <if test='queryParams.mchId !=null and queryParams.mchId.trim() neq "" '>
+                AND t1.mch_id = #{queryParams.mchId}
+            </if>
+            <if test='queryParams.orderType !=null and queryParams.orderType.trim() neq ""'>
+                AND t1.order_type = #{queryParams.orderType}
+            </if>
+            <if test='queryParams.excludeOrderScenes != null and queryParams.excludeOrderScenes.size() gt 0'>
+                AND (t1.order_scene IS NULL OR t1.order_scene NOT IN
+                <foreach collection='queryParams.excludeOrderScenes' item='scene' open='(' separator=',' close=')'>
+                    #{scene}
+                </foreach>
+                )
+            </if>
+            <if test='queryParams.orderScene !=null and queryParams.orderScene.trim() neq ""'>
+                AND t1.order_scene = #{queryParams.orderScene}
+            </if>
+            and t1.deleted = 0
+        </where>
+        ORDER BY
+        t1.create_time DESC
+    </select>
+    <select id="getOrderPriceSum" resultType="com.deko.mall.oms.model.vo.OmsOrderPriceVO">
+        SELECT
+        sum(oi2.total_amount + oi2.freight_amount) totalAmount,
+        sum(t1.payment_amount) paymentAmount
+        FROM (
+            <!-- 实付只取订单级 payment_amount：
+                 ① 现网 oms_order_item 缺 payment_amount 列（仓库 DDL 有、线上库没有 → 1054 漂移）；
+                 ② 即便列存在，多商品行直接 JOIN oms_order 也会把订单实付重复计入，
+                    故订单侧先按订单聚合出一行，再与商品行 JOIN（商品/供应商维度过滤仍走 oi2） -->
+            SELECT id, order_no, status, create_time, delivery_time, receive_time,
+                   buyer_phone, member_id, pay_channel, payment_amount
+            FROM oms_order
+        ) t1
+        JOIN oms_order_item oi2 ON oi2.order_id = t1.id AND oi2.deleted = 0
+        <where>
+            <if test='queryParams.keywords !=null and queryParams.keywords.trim() neq ""'>
+                AND
+                (
+                t1.order_no LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND (oi.sku_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                           OR oi.spu_name LIKE CONCAT('%', #{queryParams.keywords}, '%'))
+                )
+                )
+            </if>
+            <if test='queryParams.status !=null and queryParams.status.size() gt 0'>
+                AND t1.status IN
+                <foreach collection='queryParams.status' item='item' open='(' separator=',' close=')'>
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryParams.beginDate !=null'>
+                AND t1.create_time &gt;= #{queryParams.beginDate}
+            </if>
+            <if test='queryParams.endDate !=null'>
+                AND t1.create_time &lt;= #{queryParams.endDate}
+            </if>
+            <if test='queryParams.deliveryEndDate !=null'>
+                AND t1.delivery_time &lt;= #{queryParams.deliveryEndDate}
+            </if>
+            <if test='queryParams.receiveBeginDate !=null'>
+                AND t1.receive_time &gt;= #{queryParams.receiveBeginDate}
+            </if>
+            <if test='queryParams.receiveEndDate !=null'>
+                AND t1.receive_time &lt;= #{queryParams.receiveEndDate}
+            </if>
+            <if test='queryParams.spuId !=null'>
+                AND EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND oi.spu_id = #{queryParams.spuId}
+                )
+            </if>
+            <if test='queryParams.phone !=null and queryParams.phone.trim() neq ""'>
+                AND t1.buyer_phone = #{queryParams.phone}
+            </if>
+            <if test='queryParams.supplierId !=null'>
+                AND oi2.supplier_id = #{queryParams.supplierId}
+            </if>
+            <if test='queryParams.memberId !=null'>
+                AND t1.member_id = #{queryParams.memberId}
+            </if>
+            <if test='queryParams.payChannel !=null and queryParams.payChannel.trim() neq "" '>
+                AND t1.pay_channel = #{queryParams.payChannel}
+            </if>
+            <if test='queryParams.paymentNo !=null and queryParams.paymentNo.trim() neq "" '>
+                AND t1.payment_no = #{queryParams.paymentNo}
+            </if>
+            <if test='queryParams.mchId !=null and queryParams.mchId.trim() neq "" '>
+                AND t1.mch_id = #{queryParams.mchId}
+            </if>
+            and t1.deleted = 0
+        </where>
+        ORDER BY
+        t1.create_time DESC
+    </select>
+    <select id="listOrderPages" resultMap="OrderMap">
+        SELECT
+        t1.id,
+        t1.order_no,
+        t1.payment_no,
+        t1.payment_channel_no,
+        t1.channel_trade_no,
+        t1.order_type,
+        t1.order_scene,
+        t1.total_amount,
+        t1.payment_amount,
+        t1.pay_channel,
+        t1.shop_id AS shop_id,
+        t1.shop_name AS shop_name,
+        t6.logo AS shop_logo,
+        t1.status,
+        t1.member_id,
+        t1.freight_amount,
+        t1.total_quantity,
+        t1.create_time,
+        t1.payment_time,
+        t1.receive_time,
+        t1.delivery_time,
+        t1.source,
+        t1.remark,
+        t1.use_points_amount,
+        t1.points_deduction_amount,
+        t1.coupon_id,
+        t1.coupon_amount,
+        t3.user_name AS receiver_name,
+        t3.user_phone AS receiver_phone,
+        t3.province_name AS receiver_province,
+        t3.city_name AS receiver_city,
+        t3.area_name AS receiver_district,
+        t3.address AS receiver_address,
+        t3.complete_address AS receiver_complete_address,
+        t1.buyer_phone AS buyer_phone,
+        t5.carrier_name AS carrier_name,
+        t5.tracking_no AS tracking_no
+        FROM
+        oms_order t1
+        LEFT JOIN oms_order_address t3 ON t1.id = t3.order_id AND t3.receive_address_type = 'USER_RECEIVE'
+        LEFT JOIN oms_order_delivery t5 ON t1.id = t5.order_id
+        LEFT JOIN pms_shop t6 ON t1.shop_id = t6.id
+        <where>
+            <if test='queryParams.keywords !=null and queryParams.keywords.trim() neq ""'>
+                AND
+                (
+                t1.order_no LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND (oi.sku_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                           OR oi.spu_name LIKE CONCAT('%', #{queryParams.keywords}, '%'))
+                )
+                )
+            </if>
+            <if test='queryParams.status !=null and queryParams.status.size() gt 0'>
+                AND t1.status IN
+                <foreach collection='queryParams.status' item='item' open='(' separator=',' close=')'>
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryParams.beginDate !=null'>
+                AND t1.create_time &gt;= #{queryParams.beginDate}
+            </if>
+            <if test='queryParams.endDate !=null'>
+                AND t1.create_time &lt;= #{queryParams.endDate}
+            </if>
+            <if test='queryParams.deliveryEndDate !=null'>
+                AND t1.delivery_time &lt;= #{queryParams.deliveryEndDate}
+            </if>
+            <if test='queryParams.receiveBeginDate !=null'>
+                AND t1.receive_time &gt;= #{queryParams.receiveBeginDate}
+            </if>
+            <if test='queryParams.receiveEndDate !=null'>
+                AND t1.receive_time &lt;= #{queryParams.receiveEndDate}
+            </if>
+            <if test='queryParams.spuId !=null'>
+                AND EXISTS (
+                    SELECT 1 FROM oms_order_item oi
+                    WHERE oi.order_id = t1.id AND oi.deleted = 0
+                      AND oi.spu_id = #{queryParams.spuId}
+                )
+            </if>
+            <if test='queryParams.phone !=null and queryParams.phone.trim() neq ""'>
+                AND t1.buyer_phone = #{queryParams.phone}
+            </if>
+            <if test='queryParams.supplierId !=null'>
+                AND EXISTS (
+                    SELECT 1 FROM oms_order_item oi2
+                    WHERE oi2.order_id = t1.id AND oi2.deleted = 0
+                      AND oi2.supplier_id = #{queryParams.supplierId}
+                )
+            </if>
+            <if test='queryParams.memberId !=null'>
+                AND t1.member_id = #{queryParams.memberId}
+            </if>
+            <if test='queryParams.payChannel !=null and queryParams.payChannel.trim() neq "" '>
+                AND t1.pay_channel = #{queryParams.payChannel}
+            </if>
+            <if test='queryParams.paymentNo !=null and queryParams.paymentNo.trim() neq "" '>
+                AND t1.payment_no = #{queryParams.paymentNo}
+            </if>
+            <if test='queryParams.mchId !=null and queryParams.mchId.trim() neq "" '>
+                AND t1.mch_id = #{queryParams.mchId}
+            </if>
+            <if test='queryParams.orderType !=null and queryParams.orderType.trim() neq ""'>
+                AND t1.order_type = #{queryParams.orderType}
+            </if>
+            <if test='queryParams.orderScene !=null and queryParams.orderScene.trim() neq ""'>
+                AND t1.order_scene = #{queryParams.orderScene}
+            </if>
+            and t1.deleted = 0
+        </where>
+        ORDER BY
+        t1.create_time DESC
+    </select>
+</mapper>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.pms.mapper.PmsGoodsCommentMapper">
+
+    <resultMap id="commentVOMap" type="com.deko.mall.pms.model.vo.GoodsCommentVO">
+        <id column="id" property="id"/>
+        <result column="spu_id" property="spuId"/>
+        <result column="sku_id" property="skuId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="member_id" property="memberId"/>
+        <result column="member_name" property="memberName"/>
+        <result column="member_avatar" property="memberAvatar"/>
+        <result column="rating" property="rating"/>
+        <result column="content" property="content"/>
+        <result column="is_anonymous" property="isAnonymous"/>
+        <result column="is_replied" property="isReplied"/>
+        <result column="reply_content" property="replyContent"/>
+        <result column="reply_time" property="replyTime"/>
+        <result column="status" property="status"/>
+        <result column="sku_name" property="skuName"/>
+        <result column="spu_name" property="spuName"/>
+        <result column="spu_pic" property="spuPic"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 管理端评论分页 -->
+    <select id="pageComments" resultMap="commentVOMap">
+        SELECT c.id, c.spu_id, c.sku_id, c.order_id, c.order_no,
+               c.member_id, c.member_name, c.member_avatar,
+               c.rating, c.content,
+               c.is_anonymous, c.is_replied, c.reply_content, c.reply_time,
+               c.status, c.create_time, c.images,
+               s.name AS spu_name,
+               s.pic_url AS spu_pic,
+               sk.name AS sku_name
+        FROM pms_goods_comment c
+        LEFT JOIN pms_spu s ON c.spu_id = s.id
+        LEFT JOIN pms_sku sk ON c.sku_id = sk.id
+        WHERE c.deleted = 0
+        <if test="query.spuName != null and query.spuName != ''">
+            AND s.name LIKE CONCAT('%', #{query.spuName}, '%')
+        </if>
+        <if test="query.status != null">
+            AND c.status = #{query.status}
+        </if>
+        <if test="query.rating != null">
+            AND c.rating = #{query.rating}
+        </if>
+        <if test="query.startTime != null and query.startTime != ''">
+            AND c.create_time &gt;= #{query.startTime}
+        </if>
+        <if test="query.endTime != null and query.endTime != ''">
+            AND c.create_time &lt;= #{query.endTime}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 评论评分统计 -->
+    <select id="getCommentScore" resultType="com.deko.mall.pms.model.vo.CommentScoreVO">
+        SELECT
+            ROUND(AVG(rating), 1) AS avg,
+            COUNT(1) AS total
+        FROM pms_goods_comment
+        WHERE spu_id = #{spuId}
+          AND status = 1
+          AND deleted = 0
+    </select>
+
+    <!-- 会员评论列表 -->
+    <select id="pageMemberComments" resultMap="commentVOMap">
+        SELECT c.id, c.spu_id, c.sku_id, c.order_id, c.order_no,
+               c.member_id, c.member_name, c.member_avatar,
+               c.rating, c.content,
+               c.is_anonymous, c.is_replied, c.reply_content, c.reply_time,
+               c.status, c.create_time, c.images,
+               s.name AS spu_name,
+               sk.name AS sku_name
+        FROM pms_goods_comment c
+        LEFT JOIN pms_spu s ON c.spu_id = s.id
+        LEFT JOIN pms_sku sk ON c.sku_id = sk.id
+        WHERE c.member_id = #{memberId}
+          AND c.deleted = 0
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 更新订单商品评论状态 -->
+    <update id="updateOrderItemCommented">
+        UPDATE oms_order_item
+        SET is_commented = 1, update_time = NOW()
+        WHERE id = #{orderItemId}
+    </update>
+
+    <!-- APP端评论分页 -->
+    <select id="pageAppComments" resultMap="commentVOMap">
+        SELECT c.id, c.spu_id, c.sku_id, c.order_id, c.order_no,
+               c.member_id, c.member_name, c.member_avatar,
+               c.rating, c.content,
+               c.is_anonymous, c.is_replied, c.reply_content, c.reply_time,
+               c.status, c.create_time, c.images,
+               sk.name AS sku_name
+        FROM pms_goods_comment c
+        LEFT JOIN pms_sku sk ON c.sku_id = sk.id
+        WHERE c.spu_id = #{spuId}
+          AND c.status = 1
+          AND c.deleted = 0
+        <if test="rating != null">
+            AND c.rating = #{rating}
+        </if>
+        <if test="hasImage != null and hasImage == true">
+            AND c.images IS NOT NULL AND c.images != '' AND c.images != '[]'
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+</mapper>

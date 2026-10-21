@@ -1,0 +1,107 @@
+{
+  "id": "4094254",
+  "name": "shopxo(整个项目)",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "1. diy, form, 小程序仅base64, TIF，（web端也可以使用这个方式）；2. web端 Base64, WOFF2, WOFF, TEF, SVG, EOT",
+  "glyphs": [
+    {
+      "icon_id": "5085205",
+      "name": "咖啡",
+      "font_class": "coffee",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "37324020",
+      "name": "关闭线条",
+      "font_class": "close-line",
+      "unicode": "e809",
+      "unicode_decimal": 59401
+    },
+    {
+      "icon_id": "37538540",
+      "name": "点赞线性-圆",
+      "font_class": "givealike-o",
+      "unicode": "e81a",
+      "unicode_decimal": 59418
+    },
+    {
+      "icon_id": "41814968",
+      "name": "播放面性",
+      "font_class": "bofang",
+      "unicode": "e83f",
+      "unicode_decimal": 59455
+    },
+    {
+      "icon_id": "40963304",
+      "name": "重置",
+      "font_class": "reset",
+      "unicode": "e841",
+      "unicode_decimal": 59457
+    },
+    {
+      "icon_id": "40963362",
+      "name": "关闭-填满",
+      "font_class": "close-fillup",
+      "unicode": "e85e",
+      "unicode_decimal": 59486
+    },
+    {
+      "icon_id": "40047124",
+      "name": "左侧箭头",
+      "font_class": "arrow-left",
+      "unicode": "e862",
+      "unicode_decimal": 59490
+    },
+    {
+      "icon_id": "42773572",
+      "name": "订单管理",
+      "font_class": "list-setup",
+      "unicode": "e8aa",
+      "unicode_decimal": 59562
+    },
+    {
+      "icon_id": "42283683",
+      "name": "购物车-线性",
+      "font_class": "cart-solid",
+      "unicode": "e7d3",
+      "unicode_decimal": 59347
+    },
+    {
+      "icon_id": "39755359",
+      "name": "购物车",
+      "font_class": "cart",
+      "unicode": "e791",
+      "unicode_decimal": 59281
+    },
+    {
+      "icon_id": "39568286",
+      "name": "搜索-线",
+      "font_class": "search-fine",
+      "unicode": "e789",
+      "unicode_decimal": 59273
+    },
+    {
+      "icon_id": "38946497",
+      "name": "眼睛-可见",
+      "font_class": "eye",
+      "unicode": "e745",
+      "unicode_decimal": 59205
+    },
+    {
+      "icon_id": "36959195",
+      "name": "购物车-高",
+      "font_class": "shopping-cart-tall",
+      "unicode": "e6c6",
+      "unicode_decimal": 59078
+    },
+    {
+      "icon_id": "36597157",
+      "name": "分享-实心",
+      "font_class": "share-solid",
+      "unicode": "e687",
+      "unicode_decimal": 59015
+    }
+  ]
+}

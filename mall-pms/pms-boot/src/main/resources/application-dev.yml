@@ -1,0 +1,34 @@
+# 消息重试配置
+message:
+  retry:
+    enabled: true
+    interval: 60000
+    max-retry-count: 3
+    interval-multiplier: 2
+    max-interval: 5000
+
+
+# RabbitMQ配置
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: CHANGEME
+    virtual-host: /
+    # 生产者确认
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    # 消费者配置
+    listener:
+      simple:
+        # 初始消费者数量
+        concurrency: 5
+        # 最大消费者数量
+        max-concurrency: 10
+        # 预取数量
+        prefetch: 1
+        # 手动确认
+        acknowledge-mode: manual

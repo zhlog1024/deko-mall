@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.pms.mapper.PmsSpuGroupRelationMapper">
+
+    <!-- 分页获取分组商品渲染信息（包含SKU最低价、库存等） -->
+    <select id="pageGroupSpuRenderVO" resultType="com.deko.mall.pms.model.vo.PmsSpuRenderVO">
+        SELECT s.id                                          AS spuId,
+               s.name                                        AS title,
+               s.pic_url                                     AS imageUrl,
+               (SELECT MIN(retail_price)
+                         FROM pms_sku
+                         WHERE spu_id = s.id
+                           AND deleted = 0)                  AS price,
+               (SELECT MIN(market_price)
+                         FROM pms_sku
+                         WHERE spu_id = s.id
+                           AND deleted = 0)                  AS originalPrice,
+               COALESCE((SELECT SUM(stock)
+                         FROM pms_sku
+                         WHERE spu_id = s.id
+                           AND deleted = 0), 0)              AS stock,
+               s.sales,
+               CASE
+                   WHEN COALESCE((SELECT SUM(stock)
+                                  FROM pms_sku
+                                  WHERE spu_id = s.id
+                                    AND deleted = 0), 0) > 0 THEN TRUE
+                   ELSE FALSE END                            AS hasStock,
+               s.status = 1                                  AS isOnSale
+        FROM pms_spu_group_relation r
+                 JOIN pms_spu s ON r.spu_id = s.id AND s.deleted = 0
+        WHERE r.group_id = #{groupId}
+        ORDER BY r.sort ASC
+    </select>
+
+    <!-- 分页获取分组商品（按 SpuPageVO 标准字段，仅返回在售商品） -->
+    <select id="pageGroupSpuForSpuPageVO" resultType="com.deko.mall.pms.model.vo.SpuPageVO">
+        SELECT s.id,
+               s.name,
+               s.pic_url AS picUrl,
+               s.description AS simpleDesc,
+               (SELECT MIN(retail_price)
+                        FROM pms_sku
+                        WHERE spu_id = s.id
+                          AND deleted = 0) AS price,
+               (SELECT MIN(market_price)
+                        FROM pms_sku
+                        WHERE spu_id = s.id
+                          AND deleted = 0) AS originPrice,
+               s.sales,
+               s.spu_type AS spuType
+        FROM pms_spu_group_relation r
+                 JOIN pms_spu s ON r.spu_id = s.id AND s.deleted = 0
+        WHERE r.group_id = #{groupId}
+          AND s.status = 1
+        ORDER BY r.sort ASC
+    </select>
+
+</mapper>
+

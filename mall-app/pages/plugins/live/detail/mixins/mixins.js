@@ -1,0 +1,382 @@
+/**
+ * 直播间混入组件
+ * 提供直播间相关的基本功能和数据管理
+ */
+const app = getApp();
+import { getLiveRoomDetail } from '@/api/live.js';
+import { isEmpty } from '@/common/js/common/common.js';
+export default {
+    /**
+     * 组件内部数据
+     */
+    data() {
+        // 点赞飞心素材：与全站其他静态素材走同一条路 —— get_static_url('live', true)
+        // 拼出 {staticUrl}static/plugins/live/images/，再加 'like/' 即素材目录。
+        //
+        // 原先这 5 张图走的是后端特殊通道（Nacos live.like-icon-base-url →
+        // 接口字段 like_icon_list → 前端读取覆盖），是本模块从 ShopXO 直播插件
+        // 移植时照搬其前端契约留下的特例。但它算出来的地址与这里完全一致
+        // （同一目录约定），属于重复实现，且后台并未暴露该配置、运营看不到，
+        // 因此已统一为前端自行计算，后端不再下发。
+        //
+        // 换素材：直接覆盖 OSS 上同名文件即可，与本行代码无关。
+        const like_base = app.globalData.get_static_url('live', true) + 'like/';
+        const like_imgs = [1, 2, 3, 4, 5].map(i => like_base + 'like' + i + '.png');
+        return {
+            windowWidth: 0,
+            windowHeight: 0,
+            is_live_ended: false,
+            live_config: {}, // 直播间配置
+            live_data: {}, // 直播间数据
+            live_video_src: '',
+            is_loading: true,
+            like_show_imgs: like_imgs,
+            lastTapTime: 0, // 用于检测双击
+            lastTapPosition: { x: 0, y: 0 }, // 记录上次点击位置
+            lastLikeTime: 0, // 记录上次点赞时间，用于防抖
+            live_status: 0,
+            live_be_right_back_error: false,
+            load_timer: null, // 延时显示视频的定时器
+            retry_count: 0, // 重试计数器
+            live_reconnect_number: 0, // 直播间重连次数
+            live_reconnect_interval_time: 1, // 直播间重连间隔时间
+            live_like_count: 0, // 点赞次数
+            live_like_click_timer: null,
+            live_id: '',
+            /** 直播功能配置已加载（拿到 config 后为 true） */
+            live_feature_ready: false,
+            is_live_chat_on: false,
+            is_live_goods_buy_on: false,
+            is_live_like_on: false,
+        }
+    },
+
+    /**
+     * 页面加载时执行
+     * @param {Object} params 页面参数
+     */
+    onLoad(params) {
+        // 调用公共事件方法
+        app.globalData.page_event_onload_handle(params);
+
+        // 设置参数
+        this.setData({
+            params: app.globalData.launch_params_handle(params),
+        });
+    },
+    
+    /**
+     * 页面显示时执行
+     */
+    onShow() {
+        // 调用公共事件方法
+        app.globalData.page_event_onshow_handle();
+
+        const data = uni.getWindowInfo();
+        this.windowWidth = data.windowWidth > 800 ? 800 : data.windowWidth;
+        this.windowHeight = data.windowHeight;
+
+        // 初始化
+        this.init();
+
+        // 页面显示时，重新加载视频
+        if (this.$refs.liveVideo) {
+            this.$refs.liveVideo.reload_video();
+        }
+
+        // 分享菜单处理
+        app.globalData.page_share_handle();
+    },
+    onLoad(params) {
+        // 获取传入的id参数
+        this.live_id = params.id || '';
+    },
+    /**
+     * 页面隐藏时执行
+     * 清理定时任务，避免内存泄漏
+     */
+    onHide() {
+        if (this.liveContentTimer) {
+            clearInterval(this.liveContentTimer);
+            this.liveContentTimer = null;
+        }
+    },
+    /**
+     * 组件挂载完成后执行
+     */
+    mounted() {
+        this.init();
+    },
+
+    methods: {
+        /** config 开关：1 / '1' / true 为开启，0 / '0' / false 为关闭 */
+        is_live_config_on(val) {
+            if (val === true || val === 1 || val === '1') {
+                return true;
+            }
+            if (val === false || val === 0 || val === '0') {
+                return false;
+            }
+            const n = Number(val);
+            return Number.isFinite(n) && n === 1;
+        },
+        apply_live_feature_config(config) {
+            const c = config || {};
+            this.is_live_chat_on = this.is_live_config_on(c.is_live_chat);
+            this.is_live_goods_buy_on = this.is_live_config_on(c.is_live_goods_buy);
+            this.is_live_like_on = this.is_live_config_on(c.is_live_like);
+            this.live_feature_ready = true;
+        },
+        /**
+         * 初始化直播间数据
+         * 请求服务器获取直播间详情信息
+         */
+        init() {
+            uni.showLoading({
+                title: '数据加载中...',
+                mask: true
+            });
+            getLiveRoomDetail(this.live_id).then((new_data) => {
+                    // 隐藏加载提示
+                    uni.hideLoading();    
+                    // 显示直播内容
+                    this.is_loading = false;
+                    // 判断是否有数据
+                    if(new_data.code == '00000') {
+                        // 更新直播间数据
+                        this.live_data = new_data.data;
+                        // 点赞图标不再从接口读：已在 data() 里用 get_static_url 算好，
+                        // 与全站静态素材保持同一套约定（后端已不再下发 like_icon_list）
+                        // 获取直播间视频信息
+                        if (new_data.data && new_data.data.live_info && !isEmpty(new_data.data.live_info.pull_url)) {
+                            // 直播拉流地址可能夹带控制字符，此处有意用正则清洗 \x00-\x1F\x7F
+                            // eslint-disable-next-line no-control-regex
+                            this.live_video_src = ((new_data.data.live_info.pull_url + '.m3u8') || '').replace(/[\x00-\x1F\x7F]/g, '');
+                        }
+                        // 直播间状态 (0离线, 1在线, 2离开, 3封禁）
+                        this.live_status = new_data.data.live_info.status || 0;
+                        // 直播间配置
+                        const config = new_data.data.config || {};
+                        this.live_config = config;
+                        this.apply_live_feature_config(config);
+                        // 直播间重连次数
+                        this.live_reconnect_number = config.live_reconnect_number || 0;
+                        this.live_reconnect_interval_time = config.live_reconnect_interval_time || 1;
+                        // 如果不存在拉流地址则认为直播已结束，避免因为报错导致的页面异常
+                        // if (isEmpty(new_data.data.pull_flv_url)) {
+                        //     this.is_live_ended = true;
+                        // }
+                    } else {
+                        uni.showToast({
+                            title: new_data.msg || '获取直播间信息失败',
+                            icon: 'none'
+                        });
+                        this.is_live_ended = true;
+                        // 隐藏加载提示
+                        uni.hideLoading();
+                    }
+                    
+                    // 确保每次重新显示都触发组件中的初始化方法
+                    this.liveContentTimer = setInterval(() => {
+                        if (this.$refs.liveContent) {
+                            const content = this.$refs.liveContent;
+                            // 初始化头部信息
+                            content.init_window_info();
+                            // 滚动到消息底部
+                            content.scroll_to_lower();
+                            // 绑定键盘事件
+                            content.bind_keyboard_listener();
+                            // 执行成功后取消定时任务
+                            clearInterval(this.liveContentTimer);
+                            this.liveContentTimer = null;
+                        }
+                    }, 200);
+                }).catch(() => {
+                    // 隐藏加载提示
+                    uni.hideLoading();
+                    // 显示直播内容
+                    this.is_loading = false;
+                    this.is_live_ended = true;
+                });
+        },
+
+        /**
+         * 视频数据加载完成时触发
+         */
+        loadedmetadata() {
+            // 隐藏加载提示
+            uni.hideLoading();
+            const _this = this;
+            // 如果加载完成了，延迟2秒确定一下直播状态, 有的时候直播状态是正常的也加载成功了，但是获取不到视频流，需要确定一下没有执行error才算是真正的成功
+            this.load_timer = setTimeout(() => {
+                console.log('视频数据加载完成');
+                _this.live_be_right_back_error = false;
+                _this.retry_count = 0;
+                // 如果重连的定时器还在运行中，则清除它
+                if (_this.ended_timer) {
+                    // 隐藏加载提示
+                    clearTimeout(_this.ended_timer);
+                }
+            }, 2000);
+        },
+        /**
+         * 标记直播结束或者直播暂停
+         */
+        ended() {
+            // 隐藏加载提示
+            uni.hideLoading();            
+            // 如果加载定时器存在，则清除
+            if (this.load_timer) {
+                // 隐藏加载提示
+                clearTimeout(this.load_timer);
+            }
+            // 如果直播已结束，则返回
+            if (!this.is_live_ended) {
+
+                if (![1, 2].includes(this.live_status)) {
+                    this.is_live_ended = true;
+                } else {
+                    // 初始化重试计数器
+                    if (this.retry_count === undefined) {
+                        this.retry_count = 0;
+                    }
+                    // 如果历史定时器存在，则清除
+                    if (this.ended_timer) {
+                        // 隐藏加载提示
+                        clearTimeout(this.ended_timer);
+                    }
+                    
+                    // 如果重试次数超过指定次数，则标记为真正结束
+                    if (this.retry_count > this.live_reconnect_number) {
+                        this.is_live_ended = true;
+                        this.live_be_right_back_error = false;
+                        // 重置计数器
+                        this.retry_count = 0;
+                        return;
+                    }
+
+                    // 增加重试计数
+                    this.retry_count++;
+                    // 暂停直播了或者继续直播了，则提示用户当前主播暂时离开
+                    this.live_be_right_back_error = true;
+                    const _this = this;
+                    // 延迟3秒后尝试重新连接
+                    this.ended_timer = setTimeout(() => {
+                        console.log('视频第' + _this.retry_count + '次连接');
+                        // 在定时结束后尝试重新连接
+                        if (_this.$refs.liveVideo) {
+                            _this.$refs.liveVideo.reload_video();
+                        }
+                    }, this.live_reconnect_interval_time * 1000);
+                }
+            }
+        },
+
+        /**
+         * 返回上一页
+         */
+        live_back() {
+            app.globalData.page_back_prev_event();
+        },
+
+        /**
+         * 处理鼠标双击事件
+         * @param {Event} event 鼠标事件对象
+         */
+        handle_click(event) {
+            this.live_like_count++;
+    
+            if (this.live_like_count === 1) {
+                // 第一次点击，设置定时器
+                this.live_like_click_timer = setTimeout(function() {
+                    // 单击，重置计数器
+                    this.live_like_count = 0;
+                }, 300); // 300ms内的两次点击算作双击
+            } else if (this.live_like_count === 2) {
+                // 双击
+                clearTimeout(this.live_like_click_timer);
+                this.live_like_count = 0;
+                if (!this.is_live_like_on) {
+                    return;
+                }
+                if (event.target.dataset.ignore) {
+                    return;
+                }
+                // 防抖处理，200ms内只能触发一次
+                const currentTime = Date.now();
+                if (currentTime - this.lastLikeTime < 300) {
+                    return;
+                }
+                
+                this.lastLikeTime = currentTime;
+                
+                if (this.$refs.fullScreenLikeEffect) {
+                    this.$refs.fullScreenLikeEffect.add_like(event);
+                }
+
+                if (this.$refs.liveContent) {
+                    this.$refs.liveContent.like_click(event);
+                }
+            }
+        },
+        
+        /**
+         * 处理触屏双击事件
+         * 检测用户在屏幕上的双击操作以触发点赞效果
+         * @param {Event} event 触摸事件对象
+         */
+        handle_touch_end(event) {
+            if (!this.is_live_like_on) {
+                return;
+            }
+            if (event.target.dataset.ignore) {
+                return;
+            }
+            // 获取当前位置
+            let x, y;
+            if (event.changedTouches && event.changedTouches.length > 0) {
+                x = event.changedTouches[0].pageX;
+                y = event.changedTouches[0].pageY;
+            } else {
+                x = event.pageX || 0;
+                y = event.pageY || 0;
+            }
+            
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - this.lastTapTime;
+            const distance = Math.sqrt(
+                Math.pow(x - this.lastTapPosition.x, 2) + 
+                Math.pow(y - this.lastTapPosition.y, 2)
+            );
+            // 判断是否为双击 (300ms内且距离较近)
+            if (tapLength < 300 && tapLength > 0 && distance < 50) {
+                
+                // 防抖处理，200ms内只能触发一次
+                if (currentTime - this.lastLikeTime < 200) {
+                    this.lastTapTime = currentTime;
+                    this.lastTapPosition = { x, y };
+                    return;
+                }
+                
+                this.lastLikeTime = currentTime;
+                
+                if (this.$refs.fullScreenLikeEffect) {
+                    this.$refs.fullScreenLikeEffect.add_like(event);
+                }
+
+                if (this.$refs.liveContent) {
+                    this.$refs.liveContent.like_click(event);
+                }
+            } 
+            this.lastTapTime = currentTime;
+            this.lastTapPosition = { x, y };
+        },
+        /**
+         * 接收直播状态
+         * @param {number} status 直播状态
+         */
+        socket_live_status(status) {
+            this.live_status = status;
+        }
+    }
+}

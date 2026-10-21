@@ -1,0 +1,1589 @@
+<template>
+    <view :class="theme_view">
+        <!-- 顶部导航 -->
+        <view v-if="goods != null" :class="'page ' + (is_single_page == 1 ? ' single-page-top' : '')">
+            <!-- 单页模式不展示导航栏 -->
+            <block v-if="is_single_page == 0">
+                <!-- #ifdef MP-WEIXIN || MP-QQ || MP-KUAISHOU || H5 || APP -->
+                <!-- 小导航 -->
+                <view class="top-nav-left-icon pf" :style="'top:' + top_nav_icon_top_value + 'px;'">
+                    <uni-icons type="back" size="22" color="#333" class="icon round cp" @tap="top_nav_left_back_event"></uni-icons>
+                    <uni-icons v-if="nav_more_list.length > 0" type="list" size="20" color="#333" class="icon round cp margin-left-lg" @tap="top_nav_left_more_event"></uni-icons>
+                </view>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP -->
+                <!-- 更多导航 -->
+                <view v-if="nav_more_list.length > 0 && nav_more_status" class="nav-more-view tc" :style="'top:' + top_nav_more_top_value + 'px;'">
+                    <view class="triangle dis-inline-block pa"></view>
+                    <view class="content radius padding-horizontal-main">
+                        <block v-for="(item, index) in nav_more_list" :key="index">
+                            <view class="item padding-main cp" :data-value="item.url" data-type="1" @tap="nav_more_event">
+                                <view class="va-m dis-inline-block">
+                                    <iconfont :name="item.icon" color="#fff"></iconfont>
+                                </view>
+                                <text class="cr-white va-m margin-left-sm">{{ item.name }}</text>
+                            </view>
+                        </block>
+                    </view>
+                </view>
+                <!-- 顶部导航 -->
+                <block v-if="(top_nav_title_data || null) != null && top_nav_title_data.length > 0">
+                    <component-trn-nav :propScroll="scroll_value" :propHeight="top_nav_height">
+                        <view class="top-nav padding-bottom padding-horizontal-main pr">
+                            <view class="top-nav-content tc">
+                                <block v-for="(item, index) in top_nav_title_data" :key="index">
+                                    <text :class="'cp ' + (top_nav_title_index == index ? 'nav-active border-color-main' : '')" :data-index="index" :data-value="item.ent" @tap="top_nav_title_event">{{ item.name }}</text>
+                                </block>
+                            </view>
+                        </view>
+                    </component-trn-nav>
+                </block>
+                <!-- #endif -->
+            </block>
+
+            <!-- 相册 -->
+            <view class="goods-photo bg-white oh pr" id="section-goods" v-if="goods_photo.length > 0" :style="'height: ' + photo_height + ' !important;'">
+                <!-- 视频 -->
+                <block v-if="(goods.video || null) != null">
+                    <view v-if="goods_video_is_autoplay" class="goods-video pa tc">
+                        <video :src="goods.video" :autoplay="goods_video_is_autoplay" :show-center-play-btn="true" :controls="false" :show-play-btn="false" :enable-progress-gesture="false" :show-fullscreen-btn="false" :style="'height: ' + photo_height + ' !important;'"></video>
+                    </view>
+                    <view class="goods-video-submit pa">
+                        <image v-if="!goods_video_is_autoplay" class="goods-video-play cp" @tap="goods_video_play_event" :src="common_static_url + 'video-play-icon.png'" mode="aspectFit"></image>
+                        <image v-if="goods_video_is_autoplay" class="goods-video-close cp" @tap="goods_video_close_event" :src="common_static_url + 'video-close-icon.png'" mode="aspectFit"></image>
+                    </view>
+                </block>
+                <!-- 相册内容 -->
+                <swiper :indicator-dots="indicator_dots" :indicator-color="indicator_color" :indicator-active-color="indicator_active_color" :autoplay="autoplay" :circular="circular" class="swiper" :style="'height: ' + photo_height + ' !important;'">
+                    <block v-for="(item, index) in goods_photo" :key="index">
+                        <swiper-item>
+                            <image class="swiper-item wh-auto" @tap="goods_photo_view_event" :data-index="index" :src="item.images" mode="aspectFill" :style="'height: ' + photo_height + ' !important;'"></image>
+                        </swiper-item>
+                    </block>
+                </swiper>
+                <!-- 标签插件 -->
+                <view v-if="(plugins_label_data || null) != null && plugins_label_data.data.length > 0" :class="'plugins-label oh pa plugins-label-' + ((plugins_label_data.base.is_user_goods_label_icon || 0) == 0 ? 'text' : 'img') + ' plugins-label-' + (plugins_label_data.base.user_goods_show_style || 'top-left')">
+                    <block v-for="(lv, li) in plugins_label_data.data" :key="li">
+                        <view class="lv dis-inline-block va-m" :data-value="(plugins_label_data.base.is_user_goods_label_url || 0) == 1 ? lv.url || '' : ''" @tap="url_event">
+                            <view v-if="(plugins_label_data.base.is_user_goods_label_icon || 0) == 0" class="round cr-white bg-main text-size-xs fl" :style="('background-color:'+(lv.bg_color || '#666'))+' !important;'+('color:'+(lv.text_color || '#fff'))+' !important;'">{{ lv.name }}</view>
+                            <image v-else class="dis-block" :src="lv.icon" mode="scaleToFill"></image>
+                        </view>
+                    </block>
+                </view>
+            </view>
+
+            <!-- 价格信息 -->
+            <view class="goods-base-price bg-white oh spacing-mb" :class="plugins_seckill_is_valid ? 'goods-base-price-countdown' : ''">
+                <!-- 价格 -->
+                <view class="price-content padding-vertical-main padding-left-main bs-bb fl" :style="plugins_seckill_is_valid ? 'background-image: url(' + plugins_seckill_data.goods_detail_header + ')' : ''">
+                    <block>
+                        <!-- 售价 -->
+                        <view v-if="(goods.show_field_price_status || 0) == 1" class="item single-text">
+                            <!-- 图标 -->
+                            <text v-if="(show_field_price_text || null) != null" :class="'price-icon round va-m margin-right-xs '+((plugins_seckill_is_valid) ? 'seckill' : '')">{{ show_field_price_text }}</text>
+                            <!-- 售价 -->
+                            <text class="sales-price va-m">{{ goods.show_price_symbol }}{{ goods_spec_base_price }}</text>
+                            <text class="sales-price-unit text-size-xs cr-grey va-m">{{ goods_show_price_unit }}</text>
+                        </view>
+                        <!-- 原价 -->
+                        <view v-if="(goods.show_field_original_price_status || 0) == 1 && (goods_spec_base_original_price || null) != null && goods_spec_base_original_price != 0" class="item original-price single-text">{{ goods.show_original_price_symbol }}{{ goods_spec_base_original_price }}{{ goods_show_original_price_unit }}</view>
+                        <!-- 积分兑换 -->
+                        <view v-if="(goods.plugins_points_data || null) != null && (goods.plugins_points_data.is_goods_detail_show || 0) == 1" class="item">
+                            <text class="points-price-value text-size-lg cr-base va-m">{{ goods.plugins_points_data.points_value }}</text>
+                            <text class="points-price-unit text-size-xs cr-grey va-m margin-left-xs">{{goods.plugins_points_data.points_unit}}</text>
+                        </view>
+                    </block>
+                </view>
+                <block v-if="plugins_seckill_is_valid">
+                    <view class="countdown-content padding-top-lg padding-bottom-lg padding-left-xs padding-right-xs fr tc">
+                        <view class="time-title cr-white single-text">{{ plugins_seckill_data.goods_detail_title || $t('goods-detail.goods-detail.775ppk') }}</view>
+                        <component-countdown
+                            :propHour="plugins_seckill_data.time.hours"
+                            :propMinute="plugins_seckill_data.time.minutes"
+                            :propSecond="plugins_seckill_data.time.seconds"
+                            :propMsecShow="true"
+                            propTimeSize="32"
+                            propTimePadding="0"
+                            propTimeWeight="bold"
+                            propTimeBackgroundColor="transparent"
+                            propTimeColor="#ffe500"
+                            propDsColor="#fff"
+                        ></component-countdown>
+                    </view>
+                </block>
+                <block v-else>
+                    <!-- 右侧操作 -->
+                    <view class="goods-base-right-opt padding-top-lg padding-bottom-lg padding-left-xs padding-right-main fr oh">
+                        <!-- 收藏 -->
+                        <view class="collect tc cp fr margin-left" @tap="goods_favor_event">
+                            <image :src="common_static_url + 'favor' + (nav_favor_button_info.status == 1 ? '-active' : '') + '-icon.png'" mode="scaleToFill" class="dis-block auto"></image>
+                            <view :class="'cr-grey text-size-xs ' + (nav_favor_button_info.status == 1 ? 'cr-main' : 'cr-grey')">{{ nav_favor_button_info.text }}</view>
+                        </view>
+                        <!-- 分享 -->
+                        <view class="goods-share tc cp fr" @tap="popup_share_event">
+                            <image :src="common_static_url + 'share-icon.png'" mode="scaleToFill" class="dis-block auto"></image>
+                            <view class="cr-grey text-size-xs">{{$t('common.share')}}</view>
+                        </view>
+                    </view>
+                </block>
+            </view>
+
+            <view class="padding-horizontal-main">
+                <!-- 基础信息 -->
+                <view class="goods-base-content border-radius-main bg-white spacing-mb">
+                    <view class="padding-main">
+                        <view class="goods-title-content oh flex-row jc-sb align-c">
+                            <!-- 标题容器 -->
+                            <view class="goods-title flex-1 flex-width" :style="'color:' + goods.title_color">
+                                <!-- icon -->
+                                <block v-if="(goods.plugins_view_icon_data || null) != null && goods.plugins_view_icon_data.length > 0">
+                                    <block v-for="(item, index) in goods.plugins_view_icon_data" :key="index">
+                                        <text
+                                            v-if="(item.name || null) != null"
+                                            class="goods-title-icon-item va-m radius text-size-xs margin-right-xs"
+                                            :style="((item.br_color || null) == null ? '' : 'border:1px solid ' + item.br_color + ';') + ((item.bg_color || null) == null ? '' : 'background: ' + item.bg_color + ';') + '' + ((item.color || null) == null ? '' : 'color: ' + item.color + ';')"
+                                            :data-value="item.url || ''"
+                                            @tap="url_event">{{ item.name }}</text>
+                                    </block>
+                                </block>
+                                <!-- 标题 -->
+                                <text class="va-m">{{ goods.title }}</text>
+                            </view>
+                            <view v-if="(plugins_seckill_data || null) !== null" class="flex-row align-c padding-left-main">
+                                <!-- 分享 -->
+                                <view class="goods-share tc cp" @tap="popup_share_event">
+                                    <image :src="common_static_url + 'share-icon.png'" mode="scaleToFill" class="dis-block auto"></image>
+                                    <view class="cr-grey text-size-xs">{{$t('common.share')}}</view>
+                                </view>
+                                <!-- 收藏 -->
+                                <view class="collect tc cp margin-left-xxxl" @tap="goods_favor_event">
+                                    <image :src="common_static_url + 'favor' + (nav_favor_button_info.status == 1 ? '-active' : '') + '-icon.png'" mode="scaleToFill" class="dis-block auto"></image>
+                                    <view :class="'cr-grey text-size-xs ' + (nav_favor_button_info.status == 1 ? 'cr-main' : 'cr-grey')">{{ nav_favor_button_info.text }}</view>
+                                </view>
+                            </view>
+                        </view>
+                        <!-- 简述 -->
+                        <view v-if="(goods.simple_desc || null) != null" class="cr-red text-size-xs margin-top-sm">{{ goods.simple_desc }}</view>
+                    </view>
+
+                    <!-- 基础总计数据 -->
+                    <view v-if="(goods.show_sales_number_status || 0) == 1 || (goods.show_inventory_status || 0) == 1" class="br-t padding-main">
+                        <view class="text-size-xs flex-row jc-sb">
+                            <view v-if="(goods.show_inventory_status || 0) == 1">
+                                <text class="cr-grey">{{$t('goods-detail.goods-detail.1s79t4')}}</text>
+                                <text class="cr-main padding-left-sm">{{ goods.inventory }}</text>
+                            </view>
+                            <view v-if="(goods.show_sales_number_status || 0) == 1">
+                                <text class="cr-grey">{{$t('goods-category.goods-category.at5p35')}}</text>
+                                <text class="cr-main padding-left-sm">{{ goods.sales_count }}</text>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+
+                <!-- 面板提示信息 -->
+                <view v-if="(goods.plugins_view_panel_data || null) != null && goods.plugins_view_panel_data.length > 0" class="goods-panel-container oh border-radius-main padding-horizontal-main padding-top-xs padding-bottom-xs bg-white text-size-xs spacing-mb">
+                    <block v-for="(item, index) in goods.plugins_view_panel_data" :key="index">
+                        <view v-if="(item || null) != null">{{ item }}</view>
+                    </block>
+                </view>
+
+                <!-- 优惠券 -->
+                <view v-if="(plugins_coupon_data || null) != null && plugins_coupon_data.data.length > 0" class="plugins-coupon-container-view pr oh padding-main border-radius-main bg-white text-size-xs spacing-mb flex-row jc-sb align-c">
+                    <view class="item-title padding-right-main self-c">{{$t('goods-detail.goods-detail.w3jma9')}}</view>
+                    <view class="flex-row align-c flex-1 flex-width">
+                        <view class="margin-right-main cp flex-1 flex-width flex-row coupon-srcoll">
+                            <block v-for="(item, index) in plugins_coupon_data.data" :key="index">
+                                <view class="coupon-padding margin-right-xs">
+                                    <view class="oh">
+                                        <view class="item margin-vertical-xs mini-coupon flex-row flex-nowrap" :class="item.status_type === 2 ? 'received-coupon mini-coupon-br' : 'not-received-coupon'">
+                                            <text class="nowrap" @tap="popup_coupon_event">{{ item.desc || item.name }}</text>
+                                            <text class="dis-inline-block nowrap margin-left-sm padding-left-sm divider-l" :data-index="index" :data-value="item.id" @tap="coupon_receive_event">{{ item.status_operable_name }}</text>
+                                        </view>
+                                    </view>
+                                </view>
+                            </block>
+                        </view>
+                        <view @tap="popup_coupon_event">
+                            <text class="text-size-xs cr-grey-9">{{$t('user-order-detail.user-order-detail.423rmr')}}{{ plugins_coupon_data.data.length }}{{$t('buy.buy.5iuqow')}}</text>
+                            <iconfont name="icon-arrow-right" color="#999" propClass="va-m"></iconfont>
+                        </view>
+                    </view>
+                </view>
+
+                <!-- 规格选择 -->
+                <view v-if="goods.is_exist_many_spec == 1 && (buy_button || null) != null && (buy_button.is_buy || 0) + (buy_button.is_cart || 0) + (buy_button.is_show || 0) > 0" class="spec-container-view oh padding-horizontal-main padding-main border-radius-main bg-white text-size-xs spacing-mb">
+                    <view class="fl item-title">{{$t('goods-detail.goods-detail.u401fi')}}</view>
+                    <view class="fr column-right-view border-radius-main single-text cp" @tap="nav_buy_submit_event" :data-type="(buy_button.is_buy || 0) == 1 ? 'buy' : (buy_button.is_cart || 0) == 1 ? 'cart' : 'spec-show'">
+                        <text class="text-size-xs cr-grey-9">{{ goods_spec_selected_text }}</text>
+                        <iconfont name="icon-arrow-right" color="#999" propClass="va-m"></iconfont>
+                    </view>
+                </view>
+                
+                <!-- <view class="bg-white padding-sm border-radius-main spacing-mb">
+                    <view>form - input -data</view>
+                    <component-form-input-base ref="form_input_base" :propConfig="order_goods_form_data_config" @onItemEvent="order_goods_form_back_item_event" @onSubmitEvent="order_goods_form_back_data_event"></component-form-input-base>
+                </view> -->
+                
+            </view>
+
+            <view class="padding-horizontal-main">
+                <!-- 商品基础参数 -->
+                <view v-if="(goods.parameters || null) != null && (goods.parameters.base || null) != null && goods.parameters.base.length > 0" class="goods-parameters parameters-base border-radius-main padding-main bg-white text-size-xs spacing-mb flex-row jc-sb align-c" @tap="popup_params_event" data-value="base">
+                    <view class="single-text padding-right-main flex-1 flex-width">
+                        <block v-for="(item, index) in goods.parameters.base" :key="index">
+                            <text v-if="index > 0">{{ $t('common.comma') }}</text>
+                            <text>{{ item.name }}:{{ item.value }}</text>
+                        </block>
+                    </view>
+                    <iconfont name="icon-arrow-right" color="#999"></iconfont>
+                </view>
+
+                <!-- 商品服务 -->
+                <view v-if="(plugins_goodsservice_data || null) != null && plugins_goodsservice_data.length > 0" class="plugins-goodsservice-view-container border-radius-main padding-main bg-white text-size-xs spacing-mb flex-row jc-sb align-c" @tap="popup_goodsservice_event">
+                    <view class="padding-right-main single-text border-radius-right-main flex-1 flex-width">
+                        <block v-for="(item, index) in plugins_goodsservice_data" :key="index">
+                            <view :class="'item dis-inline-block ' + (index > 0 ? 'margin-left-xxl' : '')">
+                                <image class="va-m radius" :src="item.images" mode="widthFix"></image>
+                                <text class="cr-base va-m margin-left-sm">{{ item.name }}</text>
+                            </view>
+                        </block>
+                    </view>
+                    <iconfont name="icon-arrow-right" color="#999" propClass="va-m"></iconfont>
+                </view>
+
+                <!-- 组合搭配 -->
+                <block v-if="plugins_binding_data != null">
+                    <component-binding-detail-list :propData="plugins_binding_data" :propLabel="plugins_label_data"></component-binding-detail-list>
+                </block>
+                <!-- 多商户 -->
+                <block v-if="plugins_shop_data != null">
+                    <component-shop-list :propData="{...{data: [plugins_shop_data]}, ...{random: random_value}}"></component-shop-list>
+                </block>
+
+                <!-- 商品评价 -->
+                <view v-if="common_is_goods_detail_show_comments == 1" class="goods-comment spacing-mb" id="section-comment">
+                    <view class="spacing-nav-title flex-row align-c jc-sb text-size-xs">
+                        <view class="title-left">
+                            <text class="text-wrapper title-left-border">{{$t('goods-detail.goods-detail.znz76d')}}</text>
+                            <text class="vice-name cr-grey">({{ goods.comments_count || 0 }})</text>
+                        </view>
+                        <text :data-value="'/pages/goods-comment/goods-comment?goods_id=' + goods.id" @tap="url_event" class="arrow-right padding-right cr-grey cp">{{$t('goods-detail.goods-detail.1rqkjt')}}{{ (goods.comments_score || null) == null ? 0 : (goods.comments_score.rate || 0) }}%</text>
+                    </view>
+                    <view class="border-radius-main padding-main bg-white">
+                        <!-- 商品数据 -->
+                        <component-goods-comments :propData="goods.comments_data"></component-goods-comments>
+                    </view>
+                </view>
+                <!-- 商品问答（mall-cms，挂 spu 最新已展示问答 + 我要提问） -->
+                <component-ask-section v-if="goods != null && (goods.id || null) != null" :prop-spu-id="goods.id" :prop-spu-name="goods.title || ''" :prop-spu-pic="goods.images || ''"></component-ask-section>
+
+                <!-- 商品详情 -->
+                <view class="goods-detail" id="section-detail">
+                    <view class="spacing-nav-title flex-row align-c jc-sb text-size-xs">
+                        <text class="text-wrapper title-left-border">{{$t('goods-detail.goods-detail.2j44o2')}}</text>
+                    </view>
+                    <view class="border-radius-main oh bg-white">
+                        <!-- 商品基础数据 -->
+                        <view v-if="(goods.base_data || null) != null && goods.base_data.length > 0" class="padding-vertical-main margin-horizontal-main br-b-e">
+                            <block v-for="(item, index) in goods.base_data" :key="index">
+                                <view class="cr-base padding-vertical-xs">
+                                    <text class="margin-right-xs">{{ item.name }}:</text>
+                                    <text>{{ item.value }}</text>
+                                </view>
+                            </block>
+                        </view>
+                        <!-- 商品详情参数 -->
+                        <view v-if="(goods.parameters || null) != null && (goods.parameters.detail || null) != null && goods.parameters.detail.length > 0" class="goods-parameters padding-vertical-main margin-horizontal-main br-b-e">
+                            <view class="oh">
+                                <block v-for="(item, index) in goods.parameters.detail" :key="index">
+                                    <view v-if="index <= 3" class="item single-text cr-base">
+                                        <text class="margin-right-xs">{{ item.name }}:</text>
+                                        <text>{{ item.value }}</text>
+                                    </view>
+                                </block>
+                            </view>
+                            <view class="tc margin-top">
+                                <text class="cr-grey" @tap="popup_params_event" data-value="detail">{{ $t('goods-detail.goods-detail.view_all_params') }} >></text>
+                            </view>
+                        </view>
+                        <view v-if="(goods.content_web || null) != null" class="padding-main web-html-content">
+                            <mp-html :content="goods.content_web" />
+                        </view>
+                        <view v-else class="cr-grey tc padding-top-xxl padding-bottom-xxl">{{$t('goods-detail.goods-detail.27wudx')}}</view>
+                    </view>
+                </view>
+
+                <!-- 猜你喜欢 -->
+                <view v-if="guess_you_like.length > 0" class="margin-top-main">
+                    <view class="tc spacing-mb">
+                        <view class="guess-like fw-b text-size-md">{{$t('goods-detail.goods-detail.v2974w')}}</view>
+                    </view>
+                    <div class="spacing-mt">
+                        <component-goods-list :propData="{ style_type: 1, goods_list: guess_you_like }"  :propCurrencySymbol="currency_symbol"></component-goods-list>
+                    </div>
+                </view>
+            </view>
+
+            <!-- 结尾 -->
+            <component-bottom-line :propStatus="data_bottom_line_status"></component-bottom-line>
+
+            <!-- 底部操作先展示加载 -->
+            <block v-if="goods_bottom_nav_status">
+                <view v-if="data_loading_status == 0" class="bottom-fixed" :style="bottom_fixed_style">
+                    <view class="bottom-line-exclude">
+                        <view class="item goods-buy-nav oh round bg-white flex-row jc-sb align-c padding-vertical-sm padding-horizontal-xs">
+                            <button class="bg-white br-white round tc text-size-md wh-auto margin-horizontal-main cr-grey" type="default" :loading="true">{{ $t('common.loading_in_text') }}</button>
+                        </view>
+                    </view>
+                </view>
+                <block v-else>
+                    <!-- 底部操作 -->
+                    <view v-if="goods_bottom_opt_nav_status" class="bottom-fixed" :style="bottom_fixed_style">
+                        <view class="bottom-line-exclude">
+                            <view class="item goods-buy-nav oh round bg-white flex-row jc-sb align-c padding-vertical-sm padding-horizontal-xs">
+                                <!-- 左侧集合操作 -->
+                                <view class="tc flex-row jc-sa align-c flex-width-half padding-right-sm">
+                                    <!-- 是否指定返回操作 -->
+                                    <view v-if="is_opt_back == 1" class="cp" @tap="bottom_nav_back_event">
+                                        <image :src="common_static_url + 'back-icon.png'" mode="scaleToFill" class="image"></image>
+                                        <text class="dis-block text-size-xs cr-grey">{{$t('common.return')}}</text>
+                                    </view>
+                                    <!-- 左侧购买导航列表 -->
+                                    <block v-if="buy_left_nav.length > 0">
+                                        <block v-for="(item, index) in buy_left_nav" :key="index">
+                                            <!-- 不展示收藏 -->
+                                            <block v-if="item.type != 'favor'">
+                                                <!-- 客服 -->
+                                                <block v-if="item.type == 'chat'">
+                                                    <component-online-service
+                                                        :propIsGoods="true"
+                                                        :propIsNav="true"
+                                                        :propCard="true"
+                                                        :propTitle="goods.title"
+                                                        :propImg="goods.images"
+                                                        :propPath="'/pages/goods-detail/goods-detail?id=' + goods.id"
+                                                        :propChatUrl="item.url || ''"
+                                                    ></component-online-service>
+                                                </block>
+                                                <!-- 首页 -->
+                                                <block v-else-if="item.type == 'home'">
+                                                    <view v-if="is_opt_back != 1" class="cp" :data-value="item.url || default_home_url" :data-type="item.type" @tap="buy_left_nav_event">
+                                                        <image :src="item.icon" mode="scaleToFill" class="image"></image>
+                                                        <text class="dis-block text-size-xs cr-grey">{{ item.name }}</text>
+                                                    </view>
+                                                </block>
+                                                <!-- 其他通用的 -->
+                                                <block v-else>
+                                                    <view class="cp" :data-value="item.url" :data-type="item.type" @tap="buy_left_nav_event">
+                                                        <image :src="item.icon" mode="scaleToFill" class="image"></image>
+                                                        <text class="dis-block text-size-xs cr-grey">{{ item.name }}</text>
+                                                    </view>
+                                                </block>
+                                            </block>
+                                        </block>
+                                    </block>
+                                    <!-- 购物车 -->
+                                    <view v-if="is_opt_cart == 1" class="cp pr" data-value="/pages/cart-page/cart-page" @tap="url_event">
+                                        <view class="badge-icon">
+                                            <component-badge :propNumber="quick_nav_cart_count"></component-badge>
+                                        </view>
+                                        <image :src="common_static_url + 'cart-icon.png'" mode="scaleToFill" class="image"></image>
+                                        <text class="dis-block text-size-xs cr-grey">{{$t('common.cart')}}</text>
+                                    </view>
+                                </view>
+                                <!-- 右侧主操作 -->
+                                <view :class="'btn-items flex-row jc-sa align-c flex-width-half goods-buy-nav-btn-number-' + (buy_button.count || 0)">
+                                    <block v-if="(buy_button.data || null) != null && buy_button.data.length > 0">
+                                        <block v-for="(item, index) in buy_button.data" :key="index">
+                                            <block v-if="(item.name || null) != null && (item.type || null) != null">
+                                                <button :class="'btn fl cr-white text-size-md round bg-' + ((item.color || 'main') == 'main' ? 'main' : 'main-pair')" type="default" @tap="nav_buy_submit_event" :data-type="item.type" :data-value="item.value || ''" :data-business="item.business || ''" hover-class="none">{{ item.name }}</button>
+                                            </block>
+                                        </block>
+                                    </block>
+                                    <button v-else class="btn fl round text-size-md cr-grey" type="default" hover-class="none" disabled>{{ buy_button.error }}</button>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+            </block>
+
+            <!-- 商品参数弹窗 -->
+            <component-popup :propShow="popup_params_status" propPosition="bottom" @onclose="popup_params_close_event">
+                <view class="padding-horizontal-main padding-top-main bg-white">
+                    <view class="close oh">
+                        <view class="fr" @tap.stop="popup_params_close_event">
+                            <iconfont name="icon-close-line" size="28rpx" color="#999"></iconfont>
+                        </view>
+                    </view>
+                    <view class="popup-params-container">
+                        <block v-if="(goods.parameters || null) != null && (goods.parameters[popup_params_type_field] || null) != null && goods.parameters[popup_params_type_field].length > 0">
+                            <block v-for="(item, index) in goods.parameters[popup_params_type_field]" :key="index">
+                                <view class="item padding-vertical-main br-b oh">
+                                    <view class="name fl br-r">{{ item.name }}</view>
+                                    <view class="value fr">{{ item.value }}</view>
+                                </view>
+                            </block>
+                        </block>
+                        <block v-else>
+                            <view class="cr-grey tc padding-top-xl padding-bottom-xxxl">{{$t('goods-detail.goods-detail.0gx41x')}}</view>
+                        </block>
+                    </view>
+                </view>
+            </component-popup>
+
+            <!-- 优惠券弹层 -->
+            <component-popup :propShow="popup_coupon_status" propPosition="bottom" @onclose="popup_coupon_close_event">
+                <view class="padding-horizontal-main padding-top-main bg-white">
+                    <view class="close oh">
+                        <view class="fr" @tap.stop="popup_coupon_close_event">
+                            <iconfont name="icon-close-line" size="28rpx" color="#999"></iconfont>
+                        </view>
+                    </view>
+                    <view class="plugins-coupon-container padding-bottom-main">
+                        <block v-if="(plugins_coupon_data || null) != null && plugins_coupon_data.data.length > 0">
+                            <block v-for="(item, index) in plugins_coupon_data.data" :key="index">
+                                <component-coupon-card :propData="item" :propStatusType="item.status_type" :propStatusOperableName="item.status_operable_name" :propIndex="index" propIsProgress @call-back="coupon_receive_back_event"></component-coupon-card>
+                            </block>
+                        </block>
+                        <block v-else>
+                            <view class="cr-grey tc padding-top-xl padding-bottom-xxxl">{{$t('goods-detail.goods-detail.96y691')}}</view>
+                        </block>
+                    </view>
+                </view>
+            </component-popup>
+            <!-- 商品服务弹层 -->
+            <component-popup :propShow="popup_goodsservice_status" propPosition="bottom" @onclose="popup_goodsservice_close_event">
+                <view class="padding-horizontal-main padding-top-main bg-white">
+                    <view class="close oh pa top-0 right-0 z-i-deep">
+                        <view class="fr padding-top padding-right padding-left-sm padding-bottom-sm" @tap.stop="popup_goodsservice_close_event">
+                            <iconfont name="icon-close-line" size="28rpx" color="#999"></iconfont>
+                        </view>
+                    </view>
+                    <view class="plugins-goodsservice-container">
+                        <block v-if="(plugins_goodsservice_data || null) != null && plugins_goodsservice_data.length > 0">
+                            <block v-for="(item, index) in plugins_goodsservice_data" :key="index">
+                                <view :class="'item oh padding-vertical-main ' + (index > 0 ? 'br-t' : '')">
+                                    <view class="fl left">
+                                        <image class="dis-block radius" :src="item.images" mode="widthFix"></image>
+                                    </view>
+                                    <view class="fr right tl">
+                                        <view class="cr-base fw-b text-size-sm">{{ item.name }}</view>
+                                        <view class="cr-grey text-size-xs margin-top-xs">{{ item.describe }}</view>
+                                    </view>
+                                </view>
+                            </block>
+                        </block>
+                        <block v-else>
+                            <view class="cr-grey tc padding-top-xl padding-bottom-xxxl">{{$t('goods-detail.goods-detail.8ej346')}}</view>
+                        </block>
+                    </view>
+                </view>
+            </component-popup>
+
+            <!-- 购买记录 -->
+            <view v-if="(plugins_salerecords_tips_content || null) != null" :class="'plugins-salerecords-tips' + plugins_salerecords_tips_ent">
+                <image mode="widthFix" :src="plugins_salerecords_tips_content.user.avatar" class="va-m br"></image>
+                <text class="margin-left-sm">{{ plugins_salerecords_tips_content.tips }}</text>
+            </view>
+        </view>
+
+        <!-- 提示信息 -->
+        <component-no-data :propStatus="data_list_loding_status" :propMsg="data_list_loding_msg" propPage="goods" :propIsHeader="true"></component-no-data>
+
+        <!-- 分享弹窗 -->
+        <component-share-popup ref="share"></component-share-popup>
+
+        <!-- 商品购买 -->
+        <component-goods-buy ref="goods_buy" :propParams="params" :propCurrencySymbol="currency_symbol" v-on:BackReleaseEvent="goods_buy_back_release_event" v-on:BackSuccessEvent="goods_buy_back_success_event" v-on:CartSuccessEvent="goods_cart_back_event" v-on:SpecChoiceEvent="goods_spec_back_event"></component-goods-buy>
+
+        <!-- 品类限制温馨提示 -->
+        <block v-if="(plugins_categorylimit_data || null) != null">
+            <component-categorylimit-warm-tips :propData="plugins_categorylimit_data"></component-categorylimit-warm-tips>
+        </block>
+
+        <!-- 商品对比 -->
+        <block v-if="goods != null">
+            <component-goods-compare :propGoods="goods"></component-goods-compare>
+        </block>
+
+        <!-- 公共 -->
+        <component-common ref="common"></component-common>
+    </view>
+</template>
+<script>
+    const app = getApp();
+    import { request } from '@/config/request';
+    import componentCommon from '@/components/common/common';
+    import componentGoodsBuy from '@/components/goods-buy/goods-buy';
+    import componentPopup from '@/components/popup/popup';
+    import componentBadge from '@/components/badge/badge';
+    import componentTrnNav from '@/components/trn-nav/trn-nav';
+    import componentCountdown from '@/components/countdown/countdown';
+    import componentNoData from '@/components/no-data/no-data';
+    import componentBottomLine from '@/components/bottom-line/bottom-line';
+    import componentOnlineService from '@/components/online-service/online-service';
+    import componentShopList from '@/pages/plugins/shop/components/shop-list/shop-list';
+    import componentBindingDetailList from '@/pages/plugins/binding/components/binding-detail-list/binding-detail-list';
+    import componentSharePopup from '@/components/share-popup/share-popup';
+    import componentGoodsComments from '@/pages/goods-detail/components/goods-comments/goods-comments';
+    import componentCategorylimitWarmTips from '@/pages/goods-detail/components/categorylimit-warm-tips/categorylimit-warm-tips';
+    import componentGoodsList from '@/components/goods-list/goods-list';
+    import componentAskCommentsGoods from '@/pages/plugins/ask/components/ask-comments-goods/ask-comments-goods';
+    import componentAskSection from '@/pages/plugins/ask/components/ask-section/ask-section';
+    import componentCouponCard from '@/pages/plugins/coupon/components/coupon-card/coupon-card';
+    import componentGoodsCompare from '@/pages/plugins/goodscompare/components/goods-compare/goods-compare';
+    import componentFormInputBase from '@/pages/goods-detail/components/form-input/components/form-input/form-input-base';
+
+    var common_static_url = app.globalData.get_static_url('common');
+    var system_info = app.globalData.get_system_info() || {};
+    var bar_height = parseInt(system_info.statusBarHeight || 0);
+    var win_width = parseInt(system_info.windowWidth || system_info.screenWidth || 0);
+    var win_height = parseInt(system_info.windowHeight || system_info.screenHeight || 0);
+    var photo_height = (win_width <= 0) ? '55vh' : app.globalData.window_width_handle(win_width) + 'px';
+    export default {
+        data() {
+            return {
+                theme_view: app.globalData.get_theme_value_view(),
+                status_bar_height: bar_height,
+                common_static_url: common_static_url,
+                bottom_fixed_style: '',
+                indicator_dots: false,
+                indicator_color: 'rgba(0, 0, 0, .2)',
+                indicator_active_color: '#666',
+                autoplay: true,
+                circular: true,
+                data_bottom_line_status: false,
+                data_list_loding_status: 1,
+                data_list_loding_msg: '',
+                data_loading_status: 0,
+                params: null,
+                system_info: system_info,
+                photo_height: photo_height,
+                goods: null,
+                guess_you_like: [],
+                goods_photo: [],
+                goods_specifications_choose: [],
+                popup_buy_status: false,
+                buy_event_type: 'buy',
+                buy_button: {},
+                buy_left_nav: [],
+                goods_spec_base_price: 0,
+                goods_spec_base_original_price: 0,
+                goods_spec_selected_text: '',
+                show_field_price_text: null,
+                goods_show_price_unit: '',
+                goods_show_original_price_unit: '',
+                goods_video_is_autoplay: false,
+                // 增加随机数，避免无法监听数据列表内部数据更新
+                random_value: 0,
+                // 是否显示底部购买导航
+                goods_bottom_nav_status: true,
+                // 禁购状态（非普通用户）
+                goods_can_buy: true,
+                // 底部导航展示状态、如果已开启多门店默认展示、则先展示加载
+                goods_bottom_opt_nav_status: true,
+                // 更多导航
+                nav_more_status: false,
+                nav_more_timer: null,
+                nav_more_list: [],
+                // 默认首页地址
+                default_home_url: app.globalData.app_tabbar_pages()[0],
+                // 导航收藏按钮
+                nav_favor_button_info: {
+                    text: this.$t('goods-detail.goods-detail.dco1sc'),
+                    status: 0,
+                },
+                // 购物车快捷导航
+                quick_nav_cart_count: 0,
+                // 基础配置
+                currency_symbol: app.globalData.currency_symbol(),
+                plugins_is_goods_detail_poster: 0,
+                common_is_goods_detail_show_comments: 1,
+                common_app_customer_service_tel: null,
+                // 是否单页预览
+                is_single_page: app.globalData.is_current_single_page() || 0,
+                // 是否底部导航展示返回按钮
+                is_opt_back: 0,
+                // 是否开启购物车
+                is_opt_cart: 1,
+                // 滚动监听值
+                scroll_value: 0,
+                // 顶部导航信息
+                // #ifdef MP || APP
+                top_nav_icon_top_value: bar_height + 8,
+                top_nav_more_top_value: bar_height + 48,
+                // #endif
+                // #ifdef H5
+                top_nav_icon_top_value: 6,
+                top_nav_more_top_value: 50,
+                // #endif
+                // #ifdef H5 || APP
+                top_nav_right_icon_left_value: win_width <= 800 ? win_width - 40 : win_width - (win_width - 800) / 2 - 40,
+                // #endif
+                top_nav_height: 20,
+                top_nav_title_index: 0,
+                top_nav_title_scroll: true,
+                top_nav_title_timer: null,
+                top_nav_title_data: [],
+                // 详情参数弹窗
+                popup_params_status: false,
+                popup_params_type_field: 'base',
+                // 自定义分享信息
+                share_info: {},
+                // 限时秒杀插件
+                plugins_seckill_data: null,
+                plugins_seckill_is_valid: false,
+                // 优惠劵插件
+                plugins_coupon_data: null,
+                popup_coupon_status: false,
+                // 购买记录插件
+                plugins_salerecords_data: null,
+                plugins_salerecords_timer: null,
+                plugins_salerecords_tips_content: null,
+                plugins_salerecords_tips_ent: '',
+                // 多商户插件
+                plugins_shop_data: null,
+                // 标签插件
+                plugins_label_data: null,
+                // 组合搭配插件
+                plugins_binding_data: null,
+                // 商品服务插件
+                plugins_goodsservice_data: null,
+                popup_goodsservice_status: false,
+                // 问答插件
+                plugins_ask_data: null,
+                // 品类限制插件
+                plugins_categorylimit_data: null,
+                
+                
+                order_goods_form_data_config: {"diy_data":[{"name":"单行文本","id":"huycy5dmuha","form_name":"huycy5dmuha","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"single-text","children":[],"com_data":{"type":"single-text","option_list":[{"name":"选项1","value":"kl0rnmc09o","color":"#eb5050"},{"name":"选项2","value":"198jbwrpsez","color":"#f0a800"},{"name":"选项3","value":"yoc7tflcsuk","color":"#46c26f"}],"show_hidden_list":[],"title":"联系人","form_value":"","other_value":"","placeholder":"请输入内容","is_required":"0","is_limit_num":"0","max_num":"","min_num":"","is_desensitization":"0","desensitization_value":[],"is_multicolour":"0","format":"none","arrangement":"horizontal","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"手机","id":"vb6e5ndybcg","form_name":"vb6e5ndybcg","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"phone","children":[],"com_data":{"title":"手机","form_value":"","form_value_code":"","placeholder":"请输入内容","icon_name":"phone","is_required":"0","is_telephone":"0","is_sms_verification":"0","is_img_sms_verification":"0","is_desensitization":"0","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"日期时间","id":"d9ndhfr5gb","form_name":"d9ndhfr5gb","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"date","children":[],"com_data":{"title":"预约时间","form_value":"","placeholder":"请选择时间","is_required":"0","date_style":"horizontal","date_type":"option6","icon_name":"date","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"地址","id":"n8tstmx6od","form_name":"n8tstmx6od","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"address","children":[],"com_data":{"title":"联系地址","address_type":"detailed","form_value":[],"province_name":"","city_name":"","county_name":"","detailed_value":"","placeholder":"请选择内容","is_required":"0","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"评分","id":"j1cpvk1kdgj","form_name":"j1cpvk1kdgj","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"score","children":[],"com_data":{"title":"评分","form_value":3,"select_color":"#FFD22A","score_type":"1","total":5,"is_required":"0","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"日期时间组","id":"jalb3wwjvjf","form_name":"jalb3wwjvjf","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"date-group","children":[],"com_data":{"title":"日期时间组","form_value":"","start_placeholder":"请选择开始时间","end_placeholder":"请选择结束时间","is_required":"0","date_style":"horizontal","date_type":"option6","icon_name":"date","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"下拉框","id":"22wncvz7gea","form_name":"22wncvz7gea","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"select","children":[],"com_data":{"type":"select","option_list":[{"name":"选项1","value":"0klgib01kl6b","color":"#eb5050"},{"name":"选项2","value":"38wack2kn7m","color":"#f0a800"},{"name":"选项3","value":"dtdiwzza3y","color":"#46c26f"},{"name":"其他333","value":"other","is_other":"1","color":"#051e500a"}],"show_hidden_list":[],"title":"下拉框","form_value":"","other_value":"","placeholder":"请选择内容","is_required":"0","is_multicolour":"0","format":"none","arrangement":"horizontal","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""},"is_desensitization":"0","desensitization_value":[]}},{"name":"单选按钮组","id":"6x9vi9xozdt","form_name":"6x9vi9xozdt","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"radio-btns","children":[],"com_data":{"type":"radio-btns","option_list":[{"name":"选项1","value":"d25zos62x2c","color":"#eb5050"},{"name":"选项2","value":"xcjt1koz6hb","color":"#f0a800"},{"name":"选项3","value":"yusvmuoxw5k","color":"#46c26f"},{"name":"其他","value":"other44","is_other":"1","color":"#051e500a"}],"show_hidden_list":[],"title":"单选按钮组","form_value":"","other_value":"","placeholder":"请输入内容","is_required":"0","is_multicolour":"0","format":"none","arrangement":"horizontal","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""},"is_desensitization":"0","desensitization_value":[]}},{"name":"下拉复选框","id":"5v1rilx5csr","form_name":"5v1rilx5csr","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"select-multi","children":[],"com_data":{"type":"select-multi","title":"下拉复选框","form_value":[],"is_multicolour":"0","option_list":[{"name":"选项1","value":"3mju4dhucb","color":"#eb5050"},{"name":"选项2","value":"bp2q5uplj54","color":"#f0a800"},{"name":"选项3","value":"62xkhv69oyi","color":"#46c26f"}],"placeholder":"请选择内容","is_required":"0","is_add_option":"1","is_limit_num":"0","min_num":"","max_num":"","arrangement":"horizontal","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"复选框组","id":"lqb32v7iq7","form_name":"lqb32v7iq7bbbb","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"checkbox","children":[],"com_data":{"type":"checkbox","title":"设计师","form_value":[],"is_multicolour":"0","option_list":[{"name":"小龙","value":"kajd3i5zszn","color":"#eb5050"},{"name":"小花","value":"gf07xhy7gzd","color":"#f0a800"},{"name":"小李","value":"gg0jvm24yr","color":"#46c26f"},{"name":"小红","value":"kpjgnvm6r4q","color":"#a2c204"}],"custom_option_list":[],"placeholder":"请选择内容","is_required":"0","is_add_option":"1","is_limit_num":"0","min_num":"","max_num":"","arrangement":"horizontal","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"数字","id":"ahzuprj6vas","form_name":"ahzuprj6vas","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"number","children":[],"com_data":{"title":"数字","form_value":"","placeholder":"请输入内容","is_required":"0","is_limit_num":"0","is_decimal":"0","is_thousandths_symbol":"0","is_display_uppercase":"0","is_display_money":"0","money_sign":"","decimal_num":0,"format":"num","min_num":"","max_num":"","is_desensitization":"0","desensitization_value":[],"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"多行文本","id":"59m7p80g573","form_name":"59m7p80g573","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"multi-text","children":[],"com_data":{"title":"多行文本","form_value":"","placeholder":"请输入内容","is_required":"0","is_limit_num":"0","min_num":"","max_num":"","is_desensitization":"0","desensitization_value":[],"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"图片","id":"otnb2e80re","form_name":"otnb2e80re","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"img","children":[],"com_data":{"title":"图片","img_src":[{"id":2773,"category_id":145,"title":"1712479942145855.png","original":"1712479942145855.png","size":"501.72KB","ext":".png","type":"image","url":"\/static\/upload\/images\/theme_data\/204\/2024\/04\/07\/1712479942145855.png","hash":"85f1b3531200737809f5902b6e2e3f6d1a38409bc41eeebb862275f71d3b9a56","add_time":"2024-04-08 11:26:00","category_name":"theme_data-204","type_name":"图片"}],"img_width":67,"img_scale_type":"1","com_width":75,"com_height":75,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"视频","id":"aj8gzeg11k","form_name":"aj8gzeg11k","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"video","children":[],"com_data":{"title":"视频","video":[{"id":2523,"category_id":9,"title":"1692267246598639.mp4","original":"演示视频.mp4","size":"755.52KB","ext":".mp4","type":"video","url":"\/static\/upload\/video\/goods\/2023\/08\/17\/1692267246598639.mp4","hash":"a31173841bfe1d16c2ff48ab24d954892f556eab9ab2b096e27b7a1788c65d3b","add_time":"2023-08-17 18:14:06","category_name":"商品","type_name":"视频"}],"video_img":[{"id":3112,"category_id":481,"title":"1752571330305769.jpg","original":"科密yc300d.jpg","size":"49.73KB","ext":".jpg","type":"image","url":"\/static\/upload\/images\/plugins_shop\/user\/1\/2025\/07\/15\/1752571330305769.jpg","hash":"2f3bce83924b3ab3039d3f30801ed9e1ca68e50f95c996db661ef9ef2d6d43aa","add_time":"2025-07-15 17:22:10","category_name":"plugins_shop-user-1","type_name":"图片"}],"video_width":245,"video_scale_type":"2","com_width":150,"com_height":150,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"1","help_explain":"对方是否公司的"}}},{"name":"文件","id":"rss33ehfi4s","form_name":"rss33ehfi4s","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"attachments","children":[],"com_data":{"title":"文件","file":[{"id":3029,"category_id":446,"title":"1741665860733584.docx","original":"1741663636736145.docx","size":"27.57KB","ext":".docx","type":"file","url":"\/static\/upload\/file\/plugins_supplier\/user_supplier\/492\/2025\/03\/11\/1741665860733584.docx","hash":"f0466fda840a83e97d8a9a142c7fd22c532398332ec757ccb32fb2ec67c45c1e","add_time":"2025-03-11 12:04:20","category_name":"plugins_supplier-user_supplier-492","type_name":"文件"}],"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"1","help_explain":"但是防晒服公司的"}}},{"name":"辅助线","id":"tfjrb7xe3ul","form_name":"tfjrb7xe3ul","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"auxiliary-line","children":[],"com_data":{"title":"辅助线","line_type":"horizontal","line_style":"solid","line_width":100,"line_location":"center","line_size":1,"line_color":"#000","com_width":150,"com_height":11,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"上传图片","id":"0ype7spb0zmi","form_name":"0ype7spb0zmi","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"upload-img","children":[],"com_data":{"title":"上传图片","form_value":[],"is_required":"0","is_limit_num":"1","limit":3,"is_limit_size":"1","upload_size":1,"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"dashed","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"上传文件","id":"pgf6uhi1ane","form_name":"pgf6uhi1ane","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"upload-attachments","children":[],"com_data":{"title":"上传文件","form_value":[],"is_required":"0","is_limit_num":"1","limit":4,"is_limit_size":"1","upload_size":10,"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"dashed","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"上传视频","id":"v9dle8bpua","form_name":"v9dle8bpua","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"upload-video","children":[],"com_data":{"title":"上传视频","form_value":[],"is_required":"0","is_limit_num":"1","limit":2,"is_limit_size":"1","upload_size":10,"com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"dashed","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}},{"name":"富文本","id":"9li7rbb0kf","form_name":"9li7rbb0kf","mark_name":"","location":{"x":0,"y":0,"record_x":0,"record_y":0,"staging_y":0},"show_tabs":"0","is_enable":"1","key":"rich-text","children":[],"com_data":{"title":"富文本","form_value":"<p><br><\/p>","placeholder":"请输入内容","is_required":"0","is_longitude_and_latitude":"0","com_width":150,"com_height":66,"common_config":{"border_is_show":"1","border_color":"#E3E3E3","border_style":"solid","format":"none","is_error":"0","error_text":"","border_radius":{"radius":4,"radius_top_left":4,"radius_top_right":4,"radius_bottom_left":4,"radius_bottom_right":4},"border_size":{"padding":1,"padding_top":1,"padding_right":1,"padding_bottom":1,"padding_left":1},"help_is_show":"0","help_explain":""}}}],"overall_config":{"type_value":"default","custom_size_type":"A3","custom_width":842,"custom_height":1191,"is_style_settings":"1","style_settings":{"computer":{"background_type":"img","background_color":"#933B3B","background_image":[{"id":3107,"category_id":492,"title":"1750408910778775.jpeg","original":"龚福祥-身份证-正面（新）的小于2M.jpeg","size":"954.56KB","ext":".jpeg","type":"image","url":"\/static\/upload\/images\/plugins_payprovider\/merchant\/1\/2025\/06\/20\/1750408910778775.jpeg","hash":"4fb3757e1b4974bd3e275ff7682fba0370ba2c47e9ba26042703914d7564d5ee","add_time":"2025-06-20 16:41:50","category_name":"plugins_payprovider-merchant-1","type_name":"图片"}],"heading_type":"color","heading_color":"#C643E0","heading_image":[{"id":3021,"category_id":403,"title":"1739586550127228.jpg","original":"QQ20250215-102718.jpg","size":"27.88KB","ext":".jpg","type":"image","url":"\/static\/upload\/images\/plugins_allocation\/2025\/02\/15\/1739586550127228.jpg","hash":"4058905c9cf160d28772cbacb9d4b2fbe9bf616155f7b1cd33f76b4f415be6fd","add_time":"2025-02-15 10:29:10","category_name":"plugins_allocation","type_name":"图片"}],"is_show_heading_title":"1","heading_title_location":"center","heading_title_size":25,"heading_title_font_weight":"bold","heading_title_color":"#000000","submit_color":"#C643E0","flex_direction":"row","filed_title_width":88,"filed_title_justification":"flex-start","filed_title_size_type":"small","input_width_type":"default","input_width":554},"mobile":{"background_type":"color","background_color":"#F8F8F8","background_image":[],"heading_type":"color","heading_color":"#C1EBFF","heading_image":[{"id":3072,"category_id":475,"title":"1747033016498889.png","original":"vs-icon-3.png","size":"17.67KB","ext":".png","type":"image","url":"\/static\/upload\/images\/plugins_goodscompare\/2025\/05\/12\/1747033016498889.png","hash":"747834aa43050e59c2095adcb2bb185b6c3bfe84298cc8bd7f3fca0bc1d9b4e5","add_time":"2025-05-12 14:56:56","category_name":"plugins_goodscompare","type_name":"图片"}],"is_show_heading_title":"0","heading_title_location":"flex-start","heading_title_size":14,"heading_title_font_weight":"400","heading_title_color":"#000000","submit_color":"#2A94FF","flex_direction":"column","filed_title_width":100,"filed_title_justification":"flex-start","filed_title_size_type":"small","input_width_type":"default","input_width":354}},"is_front_end_cache":"1","is_show_submit":"1","submit_title":"提交99","is_show_save_draft":"1","save_draft_title":"保存草稿","is_layout_settings":"0","layout_settings":{"computer":{"flex_direction":"column","filed_title_width":100,"filed_title_justification":"flex-start","filed_title_size_type":"small","input_width_type":"default"},"mobile":{"flex_direction":"column","filed_title_width":100,"filed_title_justification":"flex-start","filed_title_size_type":"small","input_width_type":"default"}}}},
+            };
+        },
+
+        components: {
+            componentCommon,
+            componentGoodsBuy,
+            componentPopup,
+            componentBadge,
+            componentTrnNav,
+            componentCountdown,
+            componentNoData,
+            componentBottomLine,
+            componentOnlineService,
+            componentShopList,
+            componentBindingDetailList,
+            componentSharePopup,
+            componentGoodsComments,
+            componentCategorylimitWarmTips,
+            componentGoodsList,
+            componentAskCommentsGoods,
+            componentAskSection,
+            componentCouponCard,
+            componentGoodsCompare,
+            componentFormInputBase
+        },
+
+        onLoad(params) {
+            // 调用公共事件方法
+            app.globalData.page_event_onload_handle(params);
+
+            params = app.globalData.launch_params_handle(params);
+            this.setData({
+                params: params,
+                // 是否自定义购买事件
+                buy_event_type: params.opt_buy_event_type || 'buy',
+                // 是否指定开启购买弹窗、默认0否、1是
+                popup_buy_status: parseInt(params.is_opt_buy_status || 0) == 1,
+                // 是否底部导航展示返回按钮
+                is_opt_back: parseInt(params.is_opt_back || 0) == 1 && (app.globalData.data.is_goods_bottom_opt_back || 0) == 1 ? 1 : 0,
+                // 是否自定义购物车状态
+                is_opt_cart: params.is_opt_cart === undefined ? (app.globalData.data.is_goods_bottom_opt_cart != null ? app.globalData.data.is_goods_bottom_opt_cart : 1) : parseInt(params.is_opt_cart || 0),
+            });
+        },
+
+        onShow() {
+            // 调用公共事件方法
+            app.globalData.page_event_onshow_handle();
+
+            // 初始化配置
+            this.init_config();
+
+            // 数据加载
+            this.init();
+
+            // 公共onshow事件
+            if ((this.$refs.common || null) != null) {
+                this.$refs.common.on_show();
+            }
+        },
+
+        // 下拉刷新
+        onPullDownRefresh() {
+            this.init();
+        },
+
+        // 页面销毁时执行
+        onUnload: function () {
+            clearInterval(this.plugins_salerecords_timer);
+        },
+
+        // 监听滚动
+        onPageScroll(e) {
+            // 位置记录
+            var upd_data = { scroll_value: e.scrollTop };
+
+            // 更多导航状态处理
+            if (this.nav_more_status) {
+                upd_data['nav_more_status'] = false;
+                clearInterval(this.nav_more_timer);
+            }
+            this.setData(upd_data);
+
+            // 顶部导航选中处理
+            if (this.top_nav_title_scroll) {
+                var self = this;
+                var data = this.top_nav_title_data;
+                var query = uni.createSelectorQuery();
+                for (var i in data) {
+                    query.select(data[i]['ent']).boundingClientRect();
+                }
+                query.exec(function (res) {
+                    if((res || null) != null) {
+                        var bar_h = parseInt(app.globalData.get_system_info('statusBarHeight', 0));
+                        var nav_h = self.top_nav_height;
+                        var length = res.length - 1;
+                        for (var i = length; i >= 0; i--) {
+                            if((res[i] || null) != null) {
+                                var temp = res[i]['top'] - bar_h - nav_h;
+                                if (temp <= 0) {
+                                    if (self.top_nav_title_index != i) {
+                                        self.top_nav_title_index = i;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        },
+
+        methods: {
+            // 初始化配置
+            init_config(status) {
+                if ((status || false) == true) {
+                    var upd_data = {
+                        currency_symbol: app.globalData.get_config('currency_symbol') || '￥',
+                    };
+                    // 只在配置存在时才覆盖默认值
+                    var showComments = app.globalData.get_config('config.common_is_goods_detail_show_comments');
+                    if (showComments != null) { upd_data['common_is_goods_detail_show_comments'] = showComments; }
+                    var tel = app.globalData.get_config('config.common_app_customer_service_tel');
+                    if (tel != null) { upd_data['common_app_customer_service_tel'] = tel; }
+                    // 商品海报：普通分享能力
+                    var poster = app.globalData.get_config('config.common_is_goods_detail_poster');
+                    if (poster != null) { upd_data['plugins_is_goods_detail_poster'] = poster; }
+                    else { upd_data['plugins_is_goods_detail_poster'] = 1; }
+                    // 商品相册尺寸类型
+                    var goods_cover_size_type = app.globalData.get_config('config.common_goods_cover_size_type', 0);
+                    if(goods_cover_size_type == 1) {
+                        upd_data['photo_height'] = parseInt(win_height*0.7)+'px';
+                    }
+                    this.setData(upd_data);
+                } else {
+                    app.globalData.is_config(this, 'init_config');
+                }
+            },
+
+            // 获取数据（适配 mall 后端）
+            init() {
+                var self = this;
+                var spuId = this.params.id;
+                if (!spuId) {
+                    this.setData({
+                        data_list_loding_status: 0,
+                        data_list_loding_msg: '商品ID无效',
+                    });
+                    return;
+                }
+                request({
+                    url: '/mall-pms/app-api/v1/spu/' + spuId,
+                    method: 'GET',
+                    headers: { auth: true },
+                }).then(function(res) {
+                    uni.stopPullDownRefresh();
+                    if (res.code === '00000') {
+                        var data = res.data;
+                        var goodsInfo = data.goodsInfo || {};
+                        var specList = data.specList || [];
+                        var skuListVal = data.skuList || [];
+                        var attributeList = data.attributeList || [];
+
+                        // 映射 SpuDetailVO → 商品详情展示格式
+                        var album = goodsInfo.album || [];
+                        var hasSpecs = specList.length > 0 && skuListVal.length > 0;
+                        var currencySymbol = self.currency_symbol || '￥';
+                        var canBuy = goodsInfo.canBuy !== false;
+
+                        // 构建 specifications 数据（供 goods-buy 组件使用）
+                        var specifications = { choose: [], spec_base: [] };
+                        if (hasSpecs) {
+                            // 构建 choose（规格选项列表）
+                            for (var si = 0; si < specList.length; si++) {
+                                var sp = specList[si];
+                                var values = [];
+                                for (var vi = 0; vi < (sp.values || []).length; vi++) {
+                                    values.push({
+                                        name: sp.values[vi].value || '',
+                                        images: '',
+                                        is_active: '',
+                                        is_dont: '',
+                                        is_disabled: ''
+                                    });
+                                }
+                                specifications.choose.push({ name: sp.name || '', value: values });
+                            }
+                            // 构建 spec_base（SKU列表，含规格映射）
+                            for (var ki = 0; ki < skuListVal.length; ki++) {
+                                var sku = skuListVal[ki];
+                                var specArr = [];
+                                var specIds = (sku.specIds || '').split('_');
+                                for (var si2 = 0; si2 < specList.length && si2 < specIds.length; si2++) {
+                                    var specVal = '';
+                                    for (var vi2 = 0; vi2 < (specList[si2].values || []).length; vi2++) {
+                                        if (specList[si2].values[vi2].id == parseInt(specIds[si2])) {
+                                            specVal = specList[si2].values[vi2].value;
+                                            break;
+                                        }
+                                    }
+                                    specArr.push({ type: specList[si2].name || '', value: specVal });
+                                }
+                                specifications.spec_base.push({
+                                    id: sku.id,
+                                    spec: specArr,
+                                    price: sku.price,
+                                    retailPrice: sku.retailPrice,
+                                    original_price: sku.marketPrice,
+                                    inventory: sku.stock,
+                                    inventory_unit: '',
+                                    images: sku.picUrl || '',
+                                    title: sku.name || '',
+                                    spec_text: specArr.map(function(s) { return s.value; }).join(' / '),
+                                    weight: 0,
+                                    coding: '',
+                                    spec_base_skuid: sku.id
+                                });
+                            }
+                        }
+
+                        // SPU 级价格可能为 null（有规格时价格在 SKU 上），用首个 SKU 价格兜底
+                        var basePrice = goodsInfo.price;
+                        if ((basePrice == null || basePrice === 0) && skuListVal.length > 0) {
+                            basePrice = skuListVal[0].retailPrice || skuListVal[0].price || 0;
+                        }
+                        var baseOriginalPrice = goodsInfo.originPrice;
+                        if ((baseOriginalPrice == null || baseOriginalPrice === 0) && skuListVal.length > 0) {
+                            baseOriginalPrice = skuListVal[0].marketPrice || 0;
+                        }
+
+                        var goods = {
+                            id: goodsInfo.id,
+                            title: goodsInfo.name || '',
+                            simple_desc: '',
+                            price: basePrice,
+                            original_price: baseOriginalPrice,
+                            images: album.length > 0 ? album[0] : '',
+                            photo: album.map(function(url) { return { images: url }; }),
+                            content_app: goodsInfo.detail ? [{ images: '', content: [goodsInfo.detail] }] : [],
+                            content_web: goodsInfo.detail || '',
+                            user_is_favor: goodsInfo.isFavor ? 1 : 0,
+                            sales_count: goodsInfo.sales || 0,
+                            inventory: skuListVal.length > 0 ? skuListVal.reduce(function(s, sku) { return s + (sku.stock || 0); }, 0) : 0,
+                            is_exist_many_spec: hasSpecs ? 1 : 0,
+                            show_field_price_status: 1,
+                            show_field_original_price_status: baseOriginalPrice && baseOriginalPrice > 0 ? 1 : 0,
+                            show_sales_number_status: 1,
+                            show_inventory_status: 1,
+                            show_field_price_text: '',
+                            show_price_symbol: currencySymbol,
+                            show_original_price_symbol: currencySymbol,
+                            show_price_unit: '',
+                            show_original_price_unit: '',
+                            // 规格数据
+                            specifications: specifications,
+                            // skuId 预选择：URL 带 skuId 时自动选中对应规格
+                            ...(function() {
+                                if (self.params.skuId && specifications.spec_base.length > 0) {
+                                    var targetSku = null;
+                                    for (var si = 0; si < specifications.spec_base.length; si++) {
+                                        if (specifications.spec_base[si].id == self.params.skuId) {
+                                            targetSku = specifications.spec_base[si];
+                                            break;
+                                        }
+                                    }
+                                    if (targetSku && specifications.choose.length > 0 && targetSku.spec.length > 0) {
+                                        for (var ci = 0; ci < specifications.choose.length; ci++) {
+                                            var choice = specifications.choose[ci];
+                                            for (var vi = 0; vi < choice.value.length; vi++) {
+                                                choice.value[vi].is_active = '';
+                                                choice.value[vi].is_disabled = '';
+                                            }
+                                        }
+                                        for (var ti = 0; ti < targetSku.spec.length; ti++) {
+                                            for (var cj = 0; cj < specifications.choose.length; cj++) {
+                                                if (specifications.choose[cj].name === targetSku.spec[ti].type) {
+                                                    for (var vj = 0; vj < specifications.choose[cj].value.length; vj++) {
+                                                        if (specifications.choose[cj].value[vj].name === targetSku.spec[ti].value) {
+                                                            specifications.choose[cj].value[vj].is_active = '1';
+                                                            break;
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                return {};
+                            })(),
+                            // 属性列表
+                            parameters: {
+                                base: attributeList.map(function(attr) { return { name: attr.name, value: attr.value }; }),
+                                detail: []
+                            },
+                            // 兼容字段
+                            buy_min_number: 1,
+                            buy_max_number: skuListVal.length > 0 ? Math.max.apply(null, skuListVal.map(function(s) { return s.stock || 0; })) : 0,
+                            inventory_unit: '',
+                        };
+
+                        // 商品数据
+                        self.init_result_data_handle(goods);
+
+                        // 构建 buy_button（底部右侧操作按钮）
+                        var buyBtnData = [];
+                        if (canBuy) {
+                            var canAddCart = goodsInfo.canAddCart !== false;
+                            if (canAddCart) {
+                                buyBtnData.push({ name: self.$t('common.join') + self.$t('common.cart'), type: 'cart', color: 'main-pair' });
+                            }
+                            buyBtnData.push({ name: self.$t('detail.detail.27pmj3'), type: 'buy', color: 'main' });
+                        }
+                        var buyButton = {
+                            is_buy: canBuy ? 1 : 0,
+                            is_cart: canBuy && canAddCart ? 1 : 0,
+                            is_show: 0,
+                            count: buyBtnData.length,
+                            data: buyBtnData,
+                            error: canBuy ? '' : self.$t('detail.detail.27pmj3'),
+                        };
+
+                        // 构建 buy_left_nav（底部左侧导航，购物车由独立按钮处理）
+                        var buyLeftNav = [];
+                        buyLeftNav.push({
+                            type: 'home',
+                            name: self.$t('common.home'),
+                            icon: self.common_static_url + 'home-icon.png',
+                            url: self.default_home_url || '/pages/index/index',
+                        });
+
+                        // 基础数据（插件数据暂设为 null，后续按需接入）
+                        var upd_data = {
+                            random_value: Math.random(),
+                            data_loading_status: 1,
+                            goods_bottom_nav_status: true,
+                            goods_bottom_opt_nav_status: true,
+                            goods_can_buy: canBuy,
+                            buy_button: buyButton,
+                            buy_left_nav: buyLeftNav,
+                            guess_you_like: [],
+                            nav_more_list: [],
+                            quick_nav_cart_count: 0,
+                            top_nav_title_data: [
+                                { name: self.$t('common.goods'), ent: '#section-goods' },
+                                { name: self.$t('common.comment'), ent: '#section-comment' },
+                                { name: self.$t('common.detail_text'), ent: '#section-detail' }
+                            ],
+                            plugins_seckill_data: null,
+                            plugins_seckill_is_valid: false,
+                            plugins_coupon_data: null,
+                            plugins_salerecords_data: null,
+                            plugins_shop_data: data.pluginsShopData || null,
+                            plugins_label_data: null,
+                            plugins_binding_data: null,
+                            plugins_goodsservice_data: null,
+                            plugins_ask_data: null,
+                            plugins_categorylimit_data: null,
+                        };
+                        self.setData(upd_data);
+
+                        // 初始化默认规格选中状态（页面展示用，不等弹窗打开）
+                        if (hasSpecs) {
+                            var defaultSpec = [];
+                            var chooseData = specifications.choose;
+                            for (var ci = 0; ci < chooseData.length; ci++) {
+                                for (var vi = 0; vi < chooseData[ci].value.length; vi++) {
+                                    if ((chooseData[ci].value[vi].is_disabled || null) == null && (chooseData[ci].value[vi].is_dont || null) == null) {
+                                        chooseData[ci].value[vi].is_active = 'cr-white bg-main br-main';
+                                        defaultSpec.push({ type: chooseData[ci].name, value: chooseData[ci].value[vi].name });
+                                        break;
+                                    }
+                                }
+                            }
+                            // 匹配默认 SKU 获取价格
+                            var defaultSku = null;
+                            var sb = specifications.spec_base;
+                            for (var si = 0; si < sb.length; si++) {
+                                var match = true;
+                                for (var di = 0; di < defaultSpec.length; di++) {
+                                    var found = false;
+                                    for (var spi = 0; spi < (sb[si].spec || []).length; spi++) {
+                                        if (sb[si].spec[spi].type === defaultSpec[di].type && sb[si].spec[spi].value === defaultSpec[di].value) {
+                                            found = true; break;
+                                        }
+                                    }
+                                    if (!found) { match = false; break; }
+                                }
+                                if (match) { defaultSku = sb[si]; break; }
+                            }
+                            goods.specifications.choose = chooseData;
+                            self.setData({
+                                goods: goods,
+                                goods_spec_selected_text: defaultSpec.map(function(s) { return s.value; }).join(' / '),
+                                goods_spec_base_price: defaultSku ? (defaultSku.retailPrice || defaultSku.price) : goods.price,
+                                goods_spec_base_original_price: defaultSku ? (defaultSku.original_price || 0) : (goods.original_price || 0),
+                                goods_spec_base_images: defaultSku ? (defaultSku.images || goods.images) : goods.images,
+                            });
+                        }
+
+                        // 如果已默认开启购买弹窗
+                        if (self.popup_buy_status && parseInt(goods.inventory) > 0) {
+                            if ((self.$refs.goods_buy || null) != null) {
+                                self.$refs.goods_buy.init(self.goods, {buy_event_type: self.buy_event_type, buy_button: {}});
+                            }
+                        }
+
+                        // 分享配置
+                        var query = 'id=' + goods.id;
+                        var u = app.globalData.get_user_cache_info('userInfo') || {};
+                        if (u.id) query += '&r=' + u.id;
+                        self.setData({
+                            share_info: {
+                                title: goods.title,
+                                desc: goods.simple_desc,
+                                path: '/pages/goods-detail/goods-detail',
+                                query: query,
+                                img: goods.images,
+                            },
+                        });
+
+                        // 分享菜单处理
+                        app.globalData.page_share_handle(self.share_info);
+
+                        // 异步获取购物车数量角标
+                        request({
+                            url: '/mall-oms/app-api/v1/carts/count',
+                            method: 'GET',
+                        }).then(function(cartRes) {
+                            if (cartRes.code === '00000') {
+                                self.setData({ quick_nav_cart_count: cartRes.data || 0 });
+                            }
+                        }).catch(function() {});
+                    } else {
+                        self.setData({
+                            data_bottom_line_status: false,
+                            data_list_loding_status: 0,
+                            data_list_loding_msg: res.msg || '商品信息加载失败',
+                        });
+                    }
+                }).catch(function() {
+                    uni.stopPullDownRefresh();
+                    self.setData({
+                        data_bottom_line_status: false,
+                        data_list_loding_status: 2,
+                        data_list_loding_msg: self.$t('common.internet_error_tips'),
+                    });
+                });
+            },
+
+            // 初始化数据处理
+            init_result_data_handle(goods) {
+                // 价格字段
+                var price_text_arr = [this.$t('goods-detail.goods-detail.bogx42'), this.$t('goods-category.goods-category.g2u3lf'), this.$t('goods-detail.goods-detail.3kdgjl')];
+                // 相册处理
+                var photo = goods.photo || [];
+                if(photo.length == 0 && (goods.images || null) != null) {
+                    photo.push({images: goods.images});
+                }
+                this.setData({
+                    data_bottom_line_status: true,
+                    data_list_loding_status: 3,
+                    goods: goods,
+                    indicator_dots: photo.length > 1,
+                    autoplay: photo.length > 1,
+                    goods_photo: photo,
+                    goods_content_app: goods.content_app || [],
+                    nav_favor_button_info: {
+                        text: this.$t('goods-detail.goods-detail.dco1sc'),
+                        status: goods.user_is_favor,
+                    },
+                    goods_spec_base_price: goods.price,
+                    goods_spec_base_original_price: goods.original_price || 0,
+                    show_field_price_text: price_text_arr.indexOf(goods.show_field_price_text) != -1 ? null : goods.show_field_price_text.replace(/<[^>]+>/g, '') || null,
+                    goods_show_price_unit: goods.show_price_unit,
+                    goods_show_original_price_unit: goods.show_original_price_unit,
+                });
+            },
+
+            // 返回事件
+            top_nav_left_back_event(e) {
+                app.globalData.page_back_prev_event();
+            },
+
+            // 更多事件
+            top_nav_left_more_event(e) {
+                if (this.nav_more_list.length <= 0) {
+                    app.globalData.showToast(this.$t('common.not_more_list_data_tips'));
+                    return false;
+                }
+
+                // 已开启则关闭并取消定时任务
+                var data = {};
+                clearInterval(this.nav_more_timer);
+                if (this.nav_more_status) {
+                    data['nav_more_status'] = false;
+                } else {
+                    var self = this;
+                    data['nav_more_status'] = true;
+                    data['nav_more_timer'] = setTimeout(function () {
+                        self.setData({
+                            nav_more_status: false,
+                        });
+                    }, 5000);
+                }
+                this.setData(data);
+            },
+
+            // 顶部导航事件
+            top_nav_title_event(e) {
+                var self = this;
+                var index = e.currentTarget.dataset.index || 0;
+                var value = e.currentTarget.dataset.value || null;
+
+                // 清除定时任务并禁止滚动改变
+                clearTimeout(self.top_nav_title_timer);
+                self.top_nav_title_scroll = false;
+
+                // 获取节点位置
+                var query = uni.createSelectorQuery();
+                query.select(value).boundingClientRect();
+                query.selectViewport().scrollOffset();
+                query.exec(function (res) {
+                    // 选中
+                    self.top_nav_title_index = index;
+
+                    // 距离计算
+                    var bar_h = parseInt(app.globalData.get_system_info('statusBarHeight', 0));
+                    var nav_h = self.top_nav_height;
+                    var top = res[0].top + res[1].scrollTop - nav_h - bar_h;
+                    uni.pageScrollTo({
+                        scrollTop: top,
+                        duration: 300,
+                    });
+                });
+
+                // 滚动完成后等待2秒解除滚动改变状态
+                self.top_nav_title_timer = setTimeout(function () {
+                    self.top_nav_title_scroll = true;
+                }, 500);
+            },
+
+            // 导航左侧操作事件
+            buy_left_nav_event(e) {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                var type = e.currentTarget.dataset.type || null;
+                var value = e.currentTarget.dataset.value || null;
+                app.globalData.url_open(value);
+            },
+
+            // 导航购买按钮事件
+            nav_buy_submit_event(e) {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                var type = e.currentTarget.dataset.type || 'buy';
+                var value = e.currentTarget.dataset.value || null;
+                switch (type) {
+                    // 展示型、拨打电话
+                    case 'show':
+                    case 'tel':
+                        app.globalData.call_tel(value || this.common_app_customer_service_tel);
+                        break;
+                    // 规格选择(展示模式)、购买、加入购物车
+                    case 'spec-show':
+                    case 'buy':
+                    case 'cart':
+                        this.setData({ buy_event_type: type });
+                        if ((this.$refs.goods_buy || null) != null) {
+                            this.$refs.goods_buy.init(this.goods, {...{buy_event_type: this.buy_event_type, buy_button: {}, is_init: 0}, ...this.params});
+                        }
+                        break;
+                    // url事件
+                    case 'url':
+                    case 'link':
+                        if (value == null) {
+                            app.globalData.showToast(this.$t('goods-detail.goods-detail.tq1976'));
+                            return false;
+                        }
+                        app.globalData.url_open(value);
+                        break;
+                    // 复制事件
+                    case 'copy':
+                        if (value == null) {
+                            app.globalData.showToast(this.$t('goods-detail.goods-detail.uyghj2'));
+                            return false;
+                        }
+                        app.globalData.text_copy_event(value);
+                        break;
+                    // 默认
+                    default:
+                        app.globalData.showToast(this.$t('goods-detail.goods-detail.721e2h')+type+')');
+                }
+            },
+
+            // 数量和规格回调-释放
+            goods_buy_back_release_event(e) {
+                this.setData({
+                    goods_spec_base_price: this.goods.price,
+                    goods_spec_base_original_price: this.goods.original_price || 0,
+                    goods_show_price_unit: this.goods.show_price_unit,
+                    goods_show_original_price_unit: this.goods.show_original_price_unit,
+                });
+            },
+
+            // 数量和规格详情回调-成功
+            goods_buy_back_success_event(e) {
+                // 更新的数据
+                var upd_data = {
+                    goods_spec_base_price: e.back_data.spec_base.retailPrice || e.back_data.spec_base.price,
+                    goods_spec_base_original_price: e.back_data.spec_base.original_price || 0,
+                    goods_show_price_unit: this.goods.show_price_unit,
+                    goods_show_original_price_unit: this.goods.show_original_price_unit,
+                }
+                // 规格单位
+                if((e.back_data.spec_base.inventory_unit || null) != null) {
+                    upd_data['goods_show_price_unit'] = ' / '+e.back_data.spec_base.inventory_unit;
+                    upd_data['goods_show_original_price_unit'] = ' / '+e.back_data.spec_base.inventory_unit;
+                }
+                this.setData(upd_data);
+            },
+
+            // 加入购物车成功回调
+            goods_cart_back_event(e) {
+                this.goods_spec_back_event(e);
+                this.goods_cart_count_handle(e.cart_number);
+            },
+
+            // 规格选择回调
+            goods_spec_back_event(e) {
+                var temp_goods = this.goods;
+                // 存在多规格则使用已选规格覆盖现有规格
+                if ((temp_goods.specifications || null) != null) {
+                    temp_goods['specifications']['choose'] = e.goods_spec_choose;
+                }
+                this.setData({
+                    goods_spec_selected_text: (e.spec || null) == null ? '' : e.spec.map(function (v) {return v.value;}).join(' / '),
+                    goods: temp_goods,
+                });
+            },
+
+            // 购物车总数处理
+            goods_cart_count_handle(cart_number) {
+                this.setData({
+                    quick_nav_cart_count: cart_number,
+                });
+            },
+
+            // 收藏事件（适配 mall 后端）
+            goods_favor_event(e) {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                var self = this;
+                var user = app.globalData.get_user_info(this, 'goods_favor_event', e);
+                if (user != false) {
+                    uni.showLoading({
+                        title: this.$t('common.processing_in_text'),
+                    });
+                    request({
+                        url: '/mall-ums/app-api/v1/favor/toggle/GOODS/' + this.goods.id,
+                        method: 'POST',
+                        headers: { auth: true },
+                    }).then(function(res) {
+                        uni.hideLoading();
+                        if (res.code === '00000') {
+                            // res.data is Boolean: true=favorited, false=unfavorited
+                            var isFavored = res.data === true;
+                            self.setData({
+                                'goods.user_is_favor': isFavored ? 1 : 0,
+                                nav_favor_button_info: {
+                                    text: self.$t('goods-detail.goods-detail.dco1sc'),
+                                    status: isFavored ? 1 : 0,
+                                },
+                            });
+                            app.globalData.showToast(isFavored ? self.$t('cart.cart.346c25') : self.$t('goods-detail.goods-detail.unfavorited'), 'success');
+                        } else {
+                            if (app.globalData.is_login_check(res, this, 'goods_favor_event')) {
+                                app.globalData.showToast(res.msg);
+                            }
+                        }
+                    }).catch(function() {
+                        uni.hideLoading();
+                        app.globalData.showToast(self.$t('common.internet_error_tips'));
+                    });
+                }
+            },
+
+            // 详情图片查看
+            goods_detail_images_view_event(e) {
+                var value = e.currentTarget.dataset.value || null;
+                if (value != null) {
+                    uni.previewImage({
+                        current: value,
+                        urls: [value],
+                    });
+                }
+            },
+
+            // 商品相册图片查看
+            goods_photo_view_event(e) {
+                var index = e.currentTarget.dataset.index;
+                var all = [];
+                for (var i in this.goods_photo) {
+                    all.push(this.goods_photo[i]['images']);
+                }
+                uni.previewImage({
+                    current: all[index],
+                    urls: all,
+                });
+            },
+
+            // 视频播放
+            goods_video_play_event(e) {
+                this.setData({
+                    goods_video_is_autoplay: true,
+                });
+            },
+
+            // 视频关闭
+            goods_video_close_event(e) {
+                this.setData({
+                    goods_video_is_autoplay: false,
+                });
+            },
+
+            // 分享开启弹层
+            popup_share_event(e) {
+                if ((this.$refs.share || null) != null) {
+                    this.$refs.share.init({
+                        status: true,
+                        is_goods_poster: this.plugins_is_goods_detail_poster,
+                        goods_id: this.goods.id,
+                        share_info: this.share_info
+                    });
+                }
+            },
+
+            // 优惠券开启弹层
+            popup_coupon_event(e) {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                this.setData({
+                    popup_coupon_status: true,
+                });
+            },
+
+            // 优惠券弹层关闭
+            popup_coupon_close_event(e) {
+                this.setData({
+                    popup_coupon_status: false,
+                });
+            },
+
+            // 优惠券组件领取事件
+            coupon_receive_back_event() {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                // 登录校验
+                let user = app.globalData.get_user_info(this, 'coupon_receive_back_event');
+                if (user != false) {
+                    let res = uni.getStorageSync('cache_plugins_coupon_receive_key') || null;
+                    if(res != null) {
+                        this.coupon_receive_handle(res);
+                    }
+                }
+            },
+
+            // 优惠劵领取事件
+            coupon_receive_event(e) {
+                if (!app.globalData.is_single_page_check()) {
+                    return false;
+                }
+                // 登录校验
+                let user = app.globalData.get_user_info(this, 'coupon_receive_event', e);
+                if (user != false) {
+                    this.coupon_receive_handle(e.currentTarget.dataset);
+                }
+            },
+
+            // 优惠券领取处理
+            coupon_receive_handle(params) {
+                let index = params.index;
+                let value = params.value;
+                let temp_list = this.plugins_coupon_data.data;
+                var self = this;
+                uni.showLoading({
+                    title: this.$t('common.processing_in_text'),
+                });
+                request({
+                    url: '/mall-sms/app-api/v1/coupons/' + value + '/receive',
+                    method: 'POST',
+                    headers: { auth: true },
+                }).then(function(res) {
+                    uni.hideLoading();
+                    if (res.code === '00000') {
+                        app.globalData.showToast(res.msg || '领取成功', 'success');
+                        if (res.data && res.data.coupon) {
+                            temp_list[index] = res.data.coupon;
+                        }
+                        self.setData({
+                            'plugins_coupon_data.data': temp_list,
+                        });
+                    } else {
+                        if (app.globalData.is_login_check(res, this, 'coupon_receive_handle', params)) {
+                            app.globalData.showToast(res.msg);
+                        }
+                    }
+                }).catch(function() {
+                    uni.hideLoading();
+                    app.globalData.showToast(self.$t('common.internet_error_tips'));
+                });
+            },
+
+            // 购买记录提示处理
+            plugins_salerecords_tips_handle() {
+                // 销毁之前的任务
+                clearInterval(this.plugins_salerecords_timer);
+                // 是否存在数据
+                var data = this.plugins_salerecords_data || null;
+                if (data != null && (data.data || null) != null && data.data.length > 0) {
+                    var self = this;
+                    var base = data.base || null;
+                    var location = base == null || (base.goods_detail_tips_location || null) == null ? '' : '-' + base.goods_detail_tips_location;
+                    var pause = (base == null ? 5 : base.goods_detail_time_pause || 5) * 1000;
+                    var interval = (base == null ? 10 : base.goods_detail_time_interval || 10) * 1000;
+                    var index = 0;
+                    var list = data.data;
+                    var count = list.length;
+                    var timer = setInterval(function () {
+                        self.setData({
+                            plugins_salerecords_tips_content: list[index],
+                        });
+                        setTimeout(function () {
+                            self.setData({
+                                plugins_salerecords_tips_content: null,
+                            });
+                        }, pause);
+                        index++;
+                        if (index >= count) {
+                            index = 0;
+                        }
+                    }, interval);
+                    self.setData({
+                        plugins_salerecords_timer: timer,
+                        plugins_salerecords_tips_ent: location,
+                    });
+                }
+            },
+            // 更多导航事件
+            nav_more_event(e) {
+                app.globalData.operation_event(e);
+                this.setData({ nav_more_status: false });
+            },
+
+            // 商品参数开启弹层
+            popup_params_event(e) {
+                this.setData({
+                    popup_params_status: true,
+                    popup_params_type_field: e.currentTarget.dataset.value || 'base',
+                });
+            },
+
+            // 商品参数关闭弹层
+            popup_params_close_event(e) {
+                this.setData({
+                    popup_params_status: false,
+                });
+            },
+
+            // 商品服务开启弹层
+            popup_goodsservice_event(e) {
+                this.setData({
+                    popup_goodsservice_status: true,
+                });
+            },
+
+            // 商品服务弹层关闭
+            popup_goodsservice_close_event(e) {
+                this.setData({
+                    popup_goodsservice_status: false,
+                });
+            },
+
+            // url事件
+            url_event(e) {
+                app.globalData.url_event(e);
+            },
+
+            // 底部导航操作返回事件
+            bottom_nav_back_event(e) {
+                var pages = getCurrentPages();
+                if (pages.length > 1) {
+                    uni.navigateBack();
+                } else {
+                    // 默认首页
+                    var url = app.globalData.app_tabbar_pages()[0];
+                    app.globalData.url_open(url);
+                }
+            },
+
+            // 下单类型切换事件、数据刷新事件
+            refresh_loading_event(params) {
+                this.setData({params: {...this.params, ...params}});
+                this.init();
+            },
+            
+            order_goods_form_back_item_event(e) {
+                console.log(e, 'item');
+                
+                // forminput
+                if ((this.$refs.form_input_base || null) != null) {
+                    this.$refs.form_input_base.submit_data_parameter_handle();
+                }
+            },
+            
+            order_goods_form_back_data_event(e) {
+                console.log(e, 'data');
+            }
+        }
+    };
+</script>
+<style>
+    @import './goods-detail.css';
+</style>

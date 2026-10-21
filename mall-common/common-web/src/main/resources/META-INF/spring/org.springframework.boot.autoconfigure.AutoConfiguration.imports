@@ -1,0 +1,6 @@
+com.deko.mall.common.web.config.WebMvcConfig
+com.deko.mall.common.web.config.FeignConfig
+com.deko.mall.common.web.exception.GlobalExceptionHandler
+com.deko.mall.common.web.aspect.DuplicateSubmitAspect
+com.deko.mall.common.web.i18n.I18nMessageSourceConfig
+com.deko.mall.common.web.i18n.LocaleConfig

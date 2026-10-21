@@ -1,0 +1,1417 @@
+<template>
+    <!-- #ifdef APP-NVUE -->
+    <view class="flex-col jc-sb pr pa-10 box-border-box bottom-line-exclude-bottom" :style="'width:' + propWindowWidth + 'px;height:' + propWindowHeight + 'px;'">
+        <view class="header-top pointer-events-auto" :style="top_content_style + menu_button_info + 'width:' + propWindowWidth + 'px;'">
+    <!-- #endif -->
+    <!-- #ifndef APP-NVUE -->
+    <view class="flex-col jc-sb pr pa-10 box-border-box bottom-line-exclude-bottom" style="width: 100%;height: 100vh;">
+        <view class="header-top" :style="top_content_style + menu_button_info">
+    <!-- #endif -->
+        <!-- 顶部返回和搜索 -->
+            <view id="search-height" class="flex-row align-c">
+                <!-- 支付宝小程序自带返回按钮，这里就不给返回按钮了，这里给留出一点空间就行 -->
+                <!-- #ifndef MP-ALIPAY -->
+                <view class="cp pointer-events-auto" @tap="handle_back">
+                    <u-icon propName="arrow-left" propSize="36rpx" propColor="#bbb" class="mr-10"></u-icon>
+                </view>
+                <!-- #endif -->
+                <!-- #ifndef APP-NVUE -->
+                <view class="wh-auto ht-auto pointer-events-auto" :style="header_padding_left">
+                <!-- #endif -->
+                <!-- #ifdef APP-NVUE -->
+                <view class="flex-1 pointer-events-auto" :style="header_padding_left">
+                <!-- #endif -->
+                    <component-search propIsDisabled @disabledSearch="handle_search" />
+                </view>
+            </view>
+            <!-- #ifndef MP -->
+            <view class="flex-row align-c jc-sb mt-10 mr-10">
+                <view class="top-header flex-row align-c pointer-events-auto">
+                    <image :src="live_avatar" class="avatar" mode="aspectFill"></image>
+                    <view class="ml-10 flex-col">
+                        <text class="nickname text-line-1">{{ live_data && live_data.title ? live_data.title : '直播' }}</text>
+                        <text v-if="live_feature_ready && is_live_like_on" class="level">{{ like_count }}本场点赞</text>
+                    </view>
+                </view>
+                <view class="flex-row align-c pointer-events-auto">
+                    <view class="flex-row align-c pr" style="direction: rtl;">
+                        <view v-for="(item, index) in online_user" :key="index" class="viewer-wrapper" :style="'z-index:' + (index + 1) + ';' + (index == 0 ? 'margin-right: 0;' : '')">
+                            <image :src="item.avatar" class="viewer-avatar"  mode="aspectFill"></image>
+                        </view>
+                    </view>
+                    <view class="ml-5 people-number flex-row align-c jc-c">
+                        <text class="cr-f size-10">{{ live_data.online_count || 0 }}</text>
+                    </view>
+                </view>
+            </view>
+            <!-- #endif -->
+        </view>
+        <!-- #ifdef MP -->
+            <!-- 顶部主播信息 -->
+            <view class="flex-row align-c jc-sb" :style="header_style">
+                <view class="top-header flex-row align-c pointer-events-auto">
+                    <image :src="live_avatar" class="avatar" mode="aspectFill"></image>
+                    <view class="ml-10 flex-col">
+                        <text class="nickname text-line-1">{{ live_data && live_data.title ? live_data.title : '直播' }}</text>
+                        <text v-if="live_feature_ready && is_live_like_on" class="level">{{ like_count }}本场点赞</text>
+                    </view>
+                </view>
+                <view class="flex-row align-c pointer-events-auto">
+                    <view class="flex-row align-c pr" style="direction: rtl;">
+                        <view v-for="(item, index) in online_user" :key="index" class="viewer-wrapper" :style="'z-index:' + (index + 1) + ';' + (index == 0 ? 'margin-right: 0;' : '')">
+                            <image :src="item.avatar" class="viewer-avatar"  mode="aspectFill"></image>
+                        </view>
+                    </view>
+                    <view class="ml-5 people-number flex-row align-c jc-c">
+                        <text class="cr-f size-10">{{ live_data.online_count || 0 }}</text>
+                    </view>
+                    <!-- <view class="viewer-back ml-5 flex-row align-c jc-c " @tap="live_back">
+                        <u-icon propName="close-fillup" class="viewer-back-icon" propSize="50rpx" propColor="#fff"></u-icon>
+                    </view> -->
+                </view>
+            </view>
+        <!-- #endif -->
+        <view class="flex-1 bottom-line-exclude-bottom flex-row">
+            <view class="flex-1 flex-col jc-e">
+                <view v-if="live_feature_ready && is_live_chat_on" class="pr">
+                    <view class="bulletin-area pr pointer-events-auto" :style="'width:' + (propWindowWidth - 150) + 'px;'">
+                        <!-- #ifdef APP-NVUE -->
+                        <!-- nvue 使用 list进行列表渲染 -->
+                        <list class="bulletin-area" :style="'width:' + (propWindowWidth - 150) + 'px;'" :show-scrollbar="false" loadmoreoffset="30" @scroll="scroll_event" @loadmore="scroll_to_lower_event">
+                            <cell v-for="(item, index) in bulletins" :key="item.id" ref="bulletin_index">
+                        <!-- #endif -->
+                        <!-- #ifndef APP-NVUE -->
+                        <!-- scroll-view 只有非nvue的页面使用 -->
+                        <scroll-view scroll-y class="bulletin-area" :style="'width:' + (propWindowWidth - 150) + 'px;'" :show-scrollbar="false" lower-threshold="30" :scroll-with-animation="true" :scroll-top="scroll_top" @scroll="scroll_event" @scrolltolower="scroll_to_lower_event">
+                            <view v-for="(item, index) in bulletins" :key="item.id">
+                        <!-- #endif -->
+                        <!-- 中间弹幕区域 -->
+                        <view class="mb-5 flex-row align-c">
+                            <!-- #ifndef APP-NVUE -->
+                            <view class="bulletin-item">
+                                <template v-if="item.type == 'user'">
+                                    <!-- 用户名和文本内容容器 -->
+                                    <view class="inline-block">
+                                        <view class="fl flex-row align-c jc-c padding-top-xsss">
+                                            <!-- 头像 -->
+                                            <image :src="item.user_avatar != null ? item.user_avatar : userAvatar" class="bulletin-item-avatar" mode="aspectFill"></image>
+                                        </view>
+                                        <text class="user-name cr-blue">{{ item.user_name }}:</text>
+                                        <text class="bulletin-text text-line-100">{{ item.text }}</text>
+                                    </view>
+                                </template>
+                                <template v-else-if="item.type == 'go'">
+                                    <text class="user-name cr-blue">{{ item.user_name }}</text>
+                                    <text class="user-name cr-d">来了</text>
+                                </template>
+                                <template v-else>
+                                    <text class="flex-1 cr-blue text-line-100 size-14">{{ item.text }}</text>
+                                </template>
+                            </view>
+                            <!-- #endif -->
+                            <!-- #ifdef APP-NVUE -->
+                            <view class="flex-1 bulletin-item padding-top-sm">
+                                <template v-if="item.type == 'user'">
+                                    <!-- 头像 -->
+                                    <view class="flex-1 flex-row align-c flex-wrap">
+                                        <image :src="item.user_avatar != null ? item.user_avatar : userAvatar" class="bulletin-item-avatar mb-3" mode="aspectFill"></image>
+                                        <text class="user-name cr-blue mb-3">{{ item.user_name }}:</text>
+                                        <!-- 注：原为 v-for="item in ..." 却用 :key="index"，index 未声明 → key 恒为 undefined，
+                                             同一条消息被 split_text 拆成的多行会共用同一个 key，渲染复用错乱。 -->
+                                        <view v-for="(item, index) in split_text(item.text)" :key="index" class="mb-3">
+                                            <text class="bulletin-text">{{ item }}</text>
+                                        </view>
+                                    </view>
+                                </template>
+                                <template v-else-if="item.type == 'go'">
+                                    <text class="user-name cr-blue mb-3">{{ item.user_name }}</text>
+                                    <text class="user-name mb-3 cr-d">来了</text>
+                                </template>
+                                <template v-else>
+                                    <text class="flex-1 cr-blue text-line-100 mb-3 size-14">{{ item.text }}</text>
+                                </template>
+                            </view>
+                            <!-- #endif -->
+                        </view>
+                        <!-- #ifdef APP-NVUE -->
+                        <!-- nvue 使用 list进行列表渲染 -->
+                            </cell>
+                        </list>
+                        <!-- #endif -->
+                        <!-- #ifndef APP-NVUE -->
+                        <!-- scroll-view 只有非nvue的页面使用 -->
+                            </view>
+                        </scroll-view>
+                        <!-- #endif -->
+                        <view v-if="!is_scroll_to_lower && message_num > 0" class="bulletin-tips flex-row align-c jc-c" :style="'width:' + (propWindowWidth - 150) + 'px;'" @tap="message_num_event">
+                            <view class="bulletin-tips-content flex-row align-c">
+                                <text class="cr-10 cr-red">{{ message_num }}条新消息</text>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+                <!-- 讲解中商品 -->
+                <view v-if="live_feature_ready && is_live_goods_buy_on && !isEmpty(explain_goods) && is_show_explain_goods" class="explain-goods pointer-events-auto" :data-url="explain_goods.goods_url" @tap="explain_goods_tap">
+                    <view class="pr oh flex-row align-c" style="width: 196rpx;height: 196rpx;border-top-left-radius: 20rpx;border-top-right-radius: 20rpx;">
+                        <image :src="explain_goods.images" style="width: 196rpx;height: 196rpx;border-top-left-radius: 20rpx;border-top-right-radius: 20rpx;" mode="aspectFill"></image>
+                        <view class="explain-subscript flex-row align-c jc-sb">
+                            <view class="explain-progress">
+                                <text class="size-12 cr-f">讲解中</text>
+                            </view>
+                            <view class="explain-close flex-row align-c" @tap.stop="explain_goods_close">
+                                <u-icon propName="close-line" propSize="18rpx" propColor="#fff"></u-icon>
+                            </view>
+                        </view>
+                    </view>
+                    <view class="explain-goods-content mt-10" style="padding: 8rpx;box-sizing: border-box;">
+                        <text class="explain-goods-name text-line-2 size-12">{{ explain_goods.title }}</text>
+                        <text class="explain-goods-price cr-red mt-10 size-12">{{ currency_symbol }}{{ explain_goods.price }}</text>
+                    </view>
+                </view>
+                <!-- 底部交互区域 -->
+                <view class="flex-row align-c mt-5 pointer-events-auto pr">
+                    <template v-if="live_feature_ready">
+                        <view class="flex-1">
+                            <view v-if="is_live_chat_on && is_socket_success" class="bottom-actions-input">
+                                <!-- #ifdef APP-NVUE -->
+                                <input :value="comment_value" type="text" confirm-type="done" :adjust-position="false" style="color: #fff;" placeholder="说点什么" placeholder-style="font-size:14px" @focus="add_comment" @input="(e) => comment_value = e.detail.value" @confirm="comment_input_confirm"  />
+                                <!-- #endif -->
+                                <!-- #ifndef APP-NVUE -->
+                                <input :value="comment_value" type="text" confirm-type="done" :adjust-position="false" style="color: #fff;" placeholder="说点什么" placeholder-style="font-size:28rpx" @focus="add_comment" @input="(e) => comment_value = e.detail.value" @confirm="comment_input_confirm"  />
+                                <!-- #endif -->
+                            </view>
+                            <view v-else-if="!is_socket_success" class="flex-1">
+                                <button class="bottom-actions-button cr-f size-14" type="primary" style="border-radius: 50rpx;background: rgba(40,40,40,0.45);border: 1rpx solid rgba(40,40,40,0.45);" :hover-class="is_socket_error ? 'none' : 'button-hover'" @tap="socket_connect_manual">{{ socket_error_content }}</button>
+                            </view>
+                            <view v-else class="bottom-actions-input-placeholder"></view>
+                        </view>
+                        <view class="bottom-actions-icon" :class="!is_live_goods_buy_on ? 'bottom-actions-icon-placeholder' : ''" @tap="add_goods">
+                            <u-icon v-if="is_live_goods_buy_on" propName="shopping-cart-tall" propColor="#fff" propSize="32rpx"></u-icon>
+                        </view>
+                        <component-like-button v-if="is_live_like_on" ref="likeButton" :propShowImgs="propLiveShowImgs" @handleClick="like_button_click">
+                            <view class="bottom-actions-icon">
+                                <u-icon propName="givealike-o" propColor="#fff" propSize="32rpx"></u-icon>
+                            </view>
+                        </component-like-button>
+                        <view v-else class="bottom-actions-icon bottom-actions-icon-placeholder"></view>
+                    </template>
+                    <view class="bottom-actions-icon" @tap="share_event">
+                        <u-icon propName="share-solid" propColor="#fff" propSize="32rpx"></u-icon>
+                    </view>
+                </view>
+            </view>
+        </view>
+        <!-- 添加评论 -->
+        <view v-if="live_feature_ready && is_live_chat_on && is_add_comment" class="keyboard-input pointer-events-auto" :style="'width:' + propWindowWidth + 'px;bottom:' + listener_height + 'px;'">
+            <view class="keyboard-input-border" style="padding: 16rpx 22rpx;border: 2rpx solid #ddd;border-radius: 50rpx;">
+                <!-- #ifdef APP-NVUE -->
+                <input :value="comment_value" :focus="is_add_comment" type="text" confirm-type="done" :adjust-position="false" :auto-blur="true" placeholder="说点什么" placeholder-style="font-size:14px" @input="(e) => comment_value = e.detail.value" @blur="() => is_add_comment = false" @confirm="comment_input_confirm" />
+                <!-- #endif -->
+                <!-- #ifndef APP-NVUE -->
+                <input :value="comment_value" :focus="is_add_comment" type="text" confirm-type="done" :adjust-position="false" :auto-blur="true" placeholder="说点什么" placeholder-style="font-size:28rpx" @input="(e) => comment_value = e.detail.value" @blur="() => is_add_comment = false" @confirm="comment_input_confirm" />
+                <!-- #endif -->
+            </view>
+        </view>
+        <!-- 商品弹出框 -->
+        <u-popup v-if="live_feature_ready && is_live_goods_buy_on" ref="popupGoodsRef" propMode="bottom" class="pointer-events-auto" propTitle="购买商品" :propCloseable="true">
+           <component-goods propIsGoodsPopup :propWindowWidth="propWindowWidth" :propWindowHeight="propWindowHeight" :propLiveId="live_data.id"></component-goods>
+        </u-popup>
+        <!-- 分享弹窗 -->
+        <u-share-popup ref="share" class="pointer-events-auto"></u-share-popup>
+    </view>
+</template>
+
+<script>
+    import componentGoods from "@/pages/plugins/live/detail/components/goods/goods.vue";
+    import componentLikeButton from "@/pages/plugins/live/detail/components/like-button/like-button.vue";
+    import componentSearch from "@/pages/plugins/live/components/search.vue";
+    import { isEmpty } from '@/common/js/common/common.js';
+    const app = getApp();
+    // 状态栏高度
+    var bar_height = parseInt(app.globalData.get_system_info('statusBarHeight', 0));
+    // #ifdef MP-TOUTIAO || H5
+    bar_height = 0;
+    // #endif
+    export default {
+        name: 'LiveContent',
+        components: {
+            componentGoods,
+            componentLikeButton,
+            componentSearch,
+        },
+        /**
+         * 直播内容组件属性
+         */
+        props: {
+            /**
+             * 直播配置信息
+             */
+            propLiveConfig: {
+                type: Object,
+                default: () => {}
+            },
+            /**
+             * 直播间全部信息
+             */
+            propLiveData: {
+                type: Object,
+                default: () => {}
+            },
+            /**
+             * 直播展示图片
+             */
+            propLiveShowImgs: {
+                type: Array,
+                default: () => []
+            },
+            propWindowWidth: {
+                type: Number,
+                default: 0
+            },
+            propWindowHeight: {
+                type: Number,
+                default: 0
+            },
+        },
+        data() {
+            return {
+                application_client_type: app.globalData.application_client_type(),
+                application_client_brand: app.globalData.application_client_brand(),
+                // 5,7,0 是误差，， 10 是下边距，66是高度，bar_height是不同小程序下的导航栏距离顶部的高度
+                // #ifdef MP
+                top_content_style: 'padding-top:' + (bar_height + 5) + 'px;padding-bottom:10px;',
+                // #endif
+                // #ifdef H5 || MP-TOUTIAO
+                top_content_style: 'padding-top:' + (bar_height + 7) + 'px;padding-bottom:10px;',
+                // #endif
+                // #ifdef APP
+                top_content_style: 'padding-top:' + bar_height + 'px;padding-bottom:10px;',
+                // #endif
+                goods_popup_status: false,
+                // 点赞计数
+                like_count: 0,
+                // 临时点赞计数
+                casual_like_count: 0,
+                like_timer: null,
+                // 直播间配置信息
+                live_data: {},
+                // 默认头像：走 get_static_url('common')（远程静态资源，随主题/OSS 前缀解析）
+                // 原值 '/static/images/common/user.png' 指向不存在的本地路径（static 下无 images/ 目录），取不到图
+                userAvatar: app.globalData.get_static_url('common') + 'user.png',
+                // 模拟观看者数据
+                online_user: [],
+                // 讲解中商品信息
+                explain_goods: {},
+                // 价格符号
+                currency_symbol: app.globalData.currency_symbol(),
+                //#region 头部样式和页面宽度处理
+                header_style: '',
+                //#endregion
+                
+                //#region 评论区
+                bulletins: [],
+                scroll_top: 0,
+                // 滚动条的高度
+                scoll_height: 600,
+                //#ifdef APP-NVUE
+                domModule: null,
+                //#endif
+                // 列表滚动事件
+                // 判断列表是否滚动了，如果滚动了，就认为他不是在底部，就要显示有多少条信息
+                is_first_scroll: true,
+                is_scroll_to_lower: true,
+                message_num: 0,
+                //#endregion
+                
+                //#region 获取用户头像信息和socket连接信息
+                // 同上：原值指向不存在的本地路径
+                live_avatar: app.globalData.get_static_url('common') + 'user.png',
+                // 连接socket
+                task: null,
+                // socket消息id
+                socket_id: 0,
+                // 心跳定时任务
+                ping_timer: null,
+                // 获取直播间数据定时任务
+                pull_live_info_timer: null,
+                // 心跳间隔时间
+                ping_interval: 30,
+                // 当前观看直播用户id
+                live_user_id: [],
+                // 观看用户名称
+                // commons_name: '陌生网友', // 用户名称
+                // is_user_comes: false,
+                // is_user_comes_timer: null,
+                //#endregion
+                
+                //#region 监听键盘弹出事件
+                comment_value: '',
+                is_add_comment: false,
+                // 监听键盘高度变化事件
+                listener_height: 0,
+                //#endregion
+                reconnect_count: 0,
+                // 不再使用 is_socket_closing 共享标志：连接换代改用「实例身份比对」
+                // （闭包捕获 task + this.task !== task 判定），见 socket_connect/socket_close
+                socket_reconnect_timer: null,
+                // socket连接错误
+                is_socket_error: false,
+                socket_error_content: '连接失败点击重试',
+                // socket连接成功
+                is_socket_success: false,
+                // 是否展示讲解商品信息
+                is_show_explain_goods: true,
+                goods_hide_timer: null, // 讲解商品信息隐藏定时器
+                // 讲解商品自动关闭定时器（此前未在 data 中声明，只在方法里直接赋值；
+                // 补上声明以便 beforeDestroy 里统一清理）
+                explain_goods_timer: null,
+                live_info_timing_interval_time: 30, // 获取直播间数据定时任务时间间隔
+                live_goods_explain_auto_close_time: 10, // 讲解商品信息自动关闭时间
+                live_websocket_url: '', // websocket地址
+                live_tips: '', // 直播提示语
+                live_feature_ready: false,
+                is_live_chat_on: false,
+                is_live_goods_buy_on: false,
+                is_live_like_on: false,
+                //#region 顶部返回和搜索
+                menu_button_info: '',
+                header_padding_left: '',
+                //#endregion
+            }
+        },
+        watch: {
+            /**
+             * 监听直播信息
+             */
+            propLiveData: {
+                handler(new_value) {
+                    if (new_value != null) {
+                        this.live_init(new_value);
+                    }
+                },
+                immediate: true,
+                deep: true
+            },
+            /**
+             * 监听直播展示图片变更
+             */
+            propLiveConfig: {
+                handler(new_value) {
+                    if (new_value != null && !isEmpty(new_value)) {
+                        this.apply_live_feature_config(new_value);
+                        // 直播间信息定时任务时间间隔
+                        // 必须兜底校验：该值直接作为 setInterval 周期，若后端未下发会被赋成
+                        // undefined → `undefined * 1000` = NaN → setInterval 按 0ms 处理，
+                        // 导致「定时获取直播间数据」疯狂空转刷屏、CPU 空耗。
+                        var poll_interval = parseInt(new_value.live_info_timing_interval_time, 10);
+                        this.live_info_timing_interval_time =
+                            (isFinite(poll_interval) && poll_interval > 0) ? poll_interval : 30;
+                        // 讲解商品信息自动关闭时间
+                        this.live_goods_explain_auto_close_time = new_value.live_goods_explain_auto_close_time;
+                        // 直播提示语
+                        this.live_tips = new_value?.live_tips || '';
+                        // socket 地址更新
+                        if (!isEmpty(new_value.socket_connect)) {
+                            // path 用于「经统一网关」：生产为 /mall-sms/，网关 StripPrefix 后
+                            // 服务端收到的仍是 /（与后端注册的根路径一致）；本地直连服务时为 /。
+                            // 缺省兜底 '/'，避免老结构（无 path）时拼出非法地址。
+                            const { host, port, is_wss, path } = new_value.socket_connect;
+                            const protocol = is_wss == 1 ? 'wss' : 'ws';
+                            const url = `${protocol}://${host}:${port}${path || '/'}`;
+
+                            if (url != this.live_websocket_url) {
+                                this.socket_close();
+                                this.live_websocket_url = url;
+                                this.socket_connect();
+                            } else if (this.task == null) {
+                                this.socket_connect();
+                            }
+                        }
+                    }
+                },
+                immediate: true,
+                deep: true
+            },
+        },
+        // /**
+        //  * 组件挂载后执行初始化操作
+        //  */
+        // onShow() {
+        //     // 初始化窗口信息和滚动条高度
+        //     this.init_window_info();
+        //     // 滚动到评论区底部
+        //     this.scroll_to_lower();
+        //     // 获取用户信息
+        //     // this.init_user_info();
+        //     // 创建监听事件
+        //     this.bind_keyboard_listener();
+        // },
+        /**
+         * 组件销毁前清理资源
+         */
+        beforeDestroy() {
+            // 必须清【全部】定时器，而不是只清 ping。
+            // 源工程 shopxo-uniapp 此处调的是 clear_all_timers()（清 ping / reconnect /
+            // pull_live_info / like / explain_goods / goods_hide 共 6 类），
+            // mall-app 移植时只保留了清 ping 的那一份 clear_interval_task()，
+            // 于是 pull_live_info_timer 等定时器在组件销毁后仍在运行。
+            //
+            // 用户可见后果：pull_live_info_timer 周期性调用 socket_send()，
+            // 而下面的 socket_close() 已把 this.task 置为 null，
+            // 每次都命中 socket_send 的失败分支 → 反复弹出「socket连接失败！」。
+            // 又因 setInterval 回调闭包持有组件实例，该弹窗会跟着用户切到别的页面
+            // （例如订单确认页）继续弹。
+            this.clear_all_timers();
+            this.unbind_keyboard_listener();
+            // 关闭socket连接
+            this.socket_close();
+        },
+        methods: {
+            isEmpty,
+            /** config 开关：1 / '1' / true 为开启，0 / '0' / false 为关闭 */
+            is_live_config_on(val) {
+                if (val === true || val === 1 || val === '1') {
+                    return true;
+                }
+                if (val === false || val === 0 || val === '0') {
+                    return false;
+                }
+                const n = Number(val);
+                return Number.isFinite(n) && n === 1;
+            },
+            apply_live_feature_config(config) {
+                const c = config || {};
+                this.is_live_chat_on = this.is_live_config_on(c.is_live_chat);
+                this.is_live_goods_buy_on = this.is_live_config_on(c.is_live_goods_buy);
+                this.is_live_like_on = this.is_live_config_on(c.is_live_like);
+                this.live_feature_ready = true;
+            },
+            /**
+             * 初始化窗口信息
+             * 获取屏幕宽高，并根据不同平台设置头部样式
+             */
+            init_window_info() {
+                // 菜单按钮位置信息, uniappx中没有这个方法，但是能使用
+                this.header_style = 'padding-top: 20rpx;';
+                // 小程序下，获取小程序胶囊的宽度
+                this.menu_button_info = 'max-width:100%;';
+                // #ifdef MP
+                // 判断是否有胶囊
+                const is_current_single_page = app.globalData.is_current_single_page();
+                // 如果有胶囊的时候，做处理
+                if (is_current_single_page == 0) {
+                    const custom = uni.getMenuButtonBoundingClientRect();
+                    this.menu_button_info = `max-width:calc(100% - ${custom.width + 10}px);`;
+                    this.header_style = `padding-top: ${custom.top + custom.height}px;`;
+                }
+                // #endif
+                //#ifdef APP
+                this.header_style = 'padding-top: 88rpx;';
+                //#endif
+                // 支付宝小程序头部左侧padding
+                let padding_left = '';
+                // #ifdef MP-ALIPAY
+                padding_left = 'padding-left: 20rpx;';
+                // #endif
+                this.header_padding_left = padding_left;
+                
+                //#ifdef APP-NVUE
+                this.scoll_height = app.globalData.rpx_to_px(600);
+                this.domModule = uni.requireNativePlugin('dom');
+                //#endif
+                //#ifndef APP-NVUE
+                this.scoll_height = app.globalData.rpx_to_px(600);
+                //#endif
+                
+                //#ifdef APP-NVUE
+                this.nvueAnimation = uni.requireNativePlugin('animation');
+                //#endif
+            },
+            
+            /**
+             * 退出直播
+             * 触发父组件的liveBack事件
+             */
+            handle_back() {
+                this.$emit('liveBack');
+            },
+
+            /**
+             * 搜索点击事件
+             */
+            handle_search() {
+                // 跳转到搜索页面
+                uni.navigateTo({
+                    url: '/pages/plugins/live/search/search'
+                });
+            },
+            
+            //#region 评论区
+            /**
+             * 滚动到评论区最底部
+             */
+            scroll_to_lower() {
+                this.$nextTick(() => {
+                    const num = Math.random() + 20;
+                    //#ifndef APP-NVUE
+                    this.scroll_top = this.scoll_height + num;
+                    //#endif
+                    //#ifdef APP-NVUE
+                    if (this.$refs.bulletin_index && this.$refs.bulletin_index.length > 0) {
+                        this.domModule.scrollToElement((this.$refs.bulletin_index[this.bulletins.length - 1]), {
+                            offset: this.scoll_height + num,  // 偏移量，可根据需要调整
+                            animated: true  // 是否带动画
+                        });
+                    }
+                    //#endif
+                })
+            },
+            /**
+             * 将文本拆分为字符数组（用于NVUE环境）
+             * @param {String} val - 需要拆分的文本
+             * @returns {Array} 拆分后的字符数组
+             */
+            split_text(val) {
+                return val.split('');
+            },
+            /**
+             * 滚动事件处理
+             * @param {Event} e - 滚动事件对象
+             */
+            scroll_event(e) {
+                this.is_scroll_to_lower = false;
+                //#ifdef APP-NVUE
+                if (this.is_first_scroll) {
+                    this.is_first_scroll = false;
+                    this.scroll_to_lower_event(e);
+                }
+                //#endif
+                //#ifndef APP-NVUE
+                // 第一次滚动的时候不会触发滚动到底部事件，需要手动触发一下
+                if (e.detail.scrollTop > 0 && this.is_first_scroll) {
+                    this.is_first_scroll = false;
+                    this.scroll_to_lower_event(e);
+                }
+                //#endif
+            },
+            /**
+             * 滚动到底部事件处理
+             * @param {Event} e - 滚动事件对象
+             */
+            scroll_to_lower_event(e) {
+                // 滑动到底部的时候，清除历史存储的消息数据
+                this.message_num = 0;
+                this.is_scroll_to_lower = true;
+            },
+            /**
+             * 新消息提示点击事件处理
+             * 点击后滚动到评论区底部
+             */
+            message_num_event() {
+                this.scroll_to_lower();
+            },
+            //#endregion
+            
+            //#region 获取用户头像信息和socket连接信息
+            /**
+             * 初始化用户信息
+             * 从缓存获取用户头像并建立WebSocket连接
+             */
+            init_user_info() {
+                const new_user = uni.getStorageSync(uni.$store?.state?.cache_user_info_key ?? '') || null;
+                if (new_user != null) {
+                    this.avatar = new_user.avatar;
+                }
+                // 连接socket
+                this.socket_connect();
+            },
+            clear_socket_reconnect_timer() {
+                if (this.socket_reconnect_timer != null) {
+                    clearTimeout(this.socket_reconnect_timer);
+                    this.socket_reconnect_timer = null;
+                }
+            },
+            schedule_socket_reconnect() {
+                if (this.socket_reconnect_timer != null) {
+                    return;
+                }
+                if ((this.reconnect_count + 1) >= 30) {
+                    this.is_socket_error = false;
+                    this.reconnect_count = 0;
+                    this.socket_error_content = '连接失败点击重试';
+                    return;
+                }
+                this.is_socket_error = true;
+                this.is_socket_success = false;
+                this.socket_error_content = `第${this.reconnect_count + 1}次连接失败`;
+                this.socket_reconnect_timer = setTimeout(() => {
+                    this.socket_reconnect_timer = null;
+                    this.reconnect_count++;
+                    this.socket_connect();
+                }, 2000);
+            },
+            /**
+             * 手动连接WebSocket
+             */
+            socket_connect_manual() {
+                if (!this.is_socket_error) {
+                    this.socket_connect(true);
+                }
+            },
+            /**
+             * 建立WebSocket连接
+             * @param {Boolean} is_manual - 是否手动连接
+             */
+            socket_connect(is_manual = false) {
+                this.clear_socket_reconnect_timer();
+                // 关闭旧连接：务必【先摘掉引用再 close】。
+                // 旧连接的回调是异步的，靠共享标志 is_socket_closing 无法判断“这次关闭
+                // 是否由我主动发起”（该标志在下面的同步流程里已被重置），会把正常换代
+                // 误判为意外断线 —— 于是 is_socket_success 被旧回调打成 false，界面显示
+                // “第N次连接失败”，而新连接其实是好的。改用实例身份比对彻底规避。
+                const previous = this.task;
+                this.task = null;
+                if (previous != null) {
+                    try { previous.close(); } catch (e) { /* 旧连接可能已关闭 */ }
+                }
+                if (is_manual) {
+                    this.reconnect_count = 0;
+                }
+                this.is_socket_error = false;
+                this.is_socket_success = false;
+                if (this.reconnect_count == 0) {
+                    this.socket_error_content = '连接中...';
+                } else {
+                    this.socket_error_content = `第${this.reconnect_count + 1}次重连中...`;
+                }
+
+                const task = uni.connectSocket({
+                    url: this.live_websocket_url,
+                    header: {
+                        "content-type": "application/json",
+                    },
+                    complete: () => {}
+                });
+                this.task = task;
+
+                // 下列回调只处理【当前代次】的连接：this.task !== task 说明该连接已被
+                // 换代或主动关闭，其迟到的回调必须忽略，否则会污染最新连接的状态。
+                task.onOpen((res) => {
+                    if (this.task !== task) return;
+                    this.reconnect_count = 0;
+                    this.is_socket_success = true;
+                    this.is_socket_error = false;
+                });
+
+                task.onMessage((res) => {
+                    if (this.task !== task) return;
+                    this.socket_message_back_handle(res);
+                });
+                task.onClose((res) => {
+                    if (this.task !== task) return;
+                    this.is_socket_success = false;
+                    this.schedule_socket_reconnect();
+                });
+                task.onError((res) => {
+                    if (this.task !== task) return;
+                    this.is_socket_success = false;
+                    if ((this.reconnect_count + 1) >= 30) {
+                        this.is_socket_error = false;
+                        this.reconnect_count = 0;
+                        this.socket_error_content = '连接失败点击重试';
+                    } else {
+                        this.schedule_socket_reconnect();
+                    }
+                    if (is_manual) {
+                        uni.showModal({
+                            title: '提示',
+                            content: res.result,
+                            showCancel: false,
+                        });
+                    }
+                });
+            },
+            socket_close() {
+                this.clear_socket_reconnect_timer();
+                // 同样先摘引用再 close，避免自己触发的 onClose 被当成意外断线
+                const previous = this.task;
+                this.task = null;
+                if (previous != null) {
+                    try { previous.close(); } catch (e) { /* 已关闭 */ }
+                }
+            },
+            
+            /**
+             * WebSocket消息回调处理
+             * @param {Object} e - WebSocket消息事件对象
+             */
+            socket_message_back_handle(e) {
+                let res = JSON.parse(e.data);
+                if(res.code !== 0) {
+                    app.globalData.showToast(res.msg);
+                    return false;
+                }
+                let data = res.data;
+                switch(data.type) {
+                    // 初始化
+                    case 'init' :
+                        this.socket_id = data.data.fd;
+                        this.ping_interval = parseInt(data.data.ping_interval || 30);
+                        // 初始化消息
+                        this.socket_send('init');
+                        break;
+            
+                    // 初始化成功
+                    case 'init-success' :
+                        this.live_user_id = data.data.live_user_id;
+                        if (this.is_live_chat_on) {
+                            const message_bulletin_index = this.bulletins.findIndex(item => item.type == 'message');
+                            if (message_bulletin_index == -1 && this.live_tips) {
+                                this.bulletins.push({
+                                    id: Math.random(),
+                                    type: 'message',
+                                    text: this.live_tips,
+                                });
+                            }
+                        }
+                        this.socket_ping_handle();
+                        if (this.is_live_goods_buy_on || this.is_live_like_on || this.is_live_chat_on) {
+                            this.socket_live_info_handle();
+                        }
+                        break;
+            
+                    // 初始化失败
+                    case 'init-fail' :
+                        console.log('connect fail');
+                        break;
+            
+                    // 加入直播间提示
+                    case 'join' :
+                        if (!this.is_live_chat_on) {
+                            break;
+                        }
+                        // 如果最后前一条是进入直播间的提示，则更新用户昵称
+                        if (this.bulletins.length > 0 && this.bulletins[this.bulletins.length - 1].type == 'go') {
+                            this.bulletins[this.bulletins.length - 1].user_name = data.content;
+                        } else {
+                            this.bulletins.push({
+                                id: Math.random(),
+                                type: 'go',
+                                user_avatar: '',
+                                user_name: data.content,
+                                text: '',
+                            });
+                        }                
+                        // 加入直播间提示之后，需要等待300毫秒，确保消息添加到数组中
+                        setTimeout(() => {
+                            // 添加内容之后，如果当前是在最后的需要滚动到最后
+                            if (this.is_scroll_to_lower) {
+                                this.scroll_to_lower();
+                            }
+                        }, 300);
+                        break;
+                    // 消息
+                    case 'message':
+                        if (!this.is_live_chat_on) {
+                            break;
+                        }
+                        // 如果最后前一条是进入直播间的提示，则删除
+                        if (this.bulletins.length > 0 && this.bulletins[this.bulletins.length - 1].type == 'go') {
+                            this.bulletins.splice(this.bulletins.length - 1, 1);
+                        }
+                        this.bulletins.push({
+                            id: Math.random(),
+                            type: 'user',
+                            user_avatar: data.data.user.avatar,
+                            user_name: data.data.user.nickname,
+                            text: data.content,
+                        });
+                        // 加入直播间提示之后，需要等待300毫秒，确保消息添加到数组中
+                        setTimeout(() => {
+                            // 添加内容之后，如果当前是在最后的需要滚动到最后
+                            if (this.is_scroll_to_lower) {
+                                this.scroll_to_lower();
+                            } else {
+                                this.message_num++;
+                            }
+                        }, 300);
+                        break;
+                    case 'live-info': // 获取直播间数据
+                        // this.$emit('liveStatus', data.content);
+                        this.live_init(data.data);
+                        break;
+                }
+            },
+            // 初始化直播间数据
+            live_init(data) { 
+                if (isEmpty(data)) return;
+                const goods = data.explain_goods;
+                if (this.is_live_goods_buy_on && ((!isEmpty(goods) && !isEmpty(this.explain_goods) && this.explain_goods.id !== goods.id) || (isEmpty(this.explain_goods) && !isEmpty(goods)))) {
+                    this.explain_goods = data.explain_goods;
+                    this.is_show_explain_goods = true;
+                    this.explain_goods_close('auto');
+                } else if (!this.is_live_goods_buy_on) {
+                    this.explain_goods = {};
+                    this.is_show_explain_goods = false;
+                }
+                this.online_user = data.online_user;
+                const new_value = data.live_info;
+                this.live_avatar = new_value.cover;
+                this.live_data = new_value;
+                if (this.is_live_like_on) {
+                    this.like_count = new_value.like_count;
+                }
+                // 直播间状态更新
+                this.$emit('liveStatus', new_value.status);
+            },
+
+            /**
+             * 手动关闭讲解商品讲解商品关闭处理函数
+             * @param {string} type - 关闭类型，'auto' 表示自动关闭，'manual' 表示立即关闭
+             */
+            explain_goods_close(type) {
+                if (this.explain_goods_timer != null) {
+                    clearTimeout(this.explain_goods_timer);
+                    this.explain_goods_timer = null;
+                }
+                // 如何类型是自动的话，就是自动关闭，否则就立即关闭
+                if (type == 'auto') {
+                    // 定时关闭讲解商品
+                    this.explain_goods_timer = setTimeout(() => {
+                        this.is_show_explain_goods = false;
+                    }, this.live_goods_explain_auto_close_time * 1000);
+                } else {
+                    this.is_show_explain_goods = false;
+                }
+            },
+            /**
+             * 讲解商品点击跳转到具体的商品详情页面
+             */
+            explain_goods_tap() {
+                if (!isEmpty(this.explain_goods.goods_url)) {
+                    const url = this.explain_goods.goods_url + '&live_id=1';
+                    app.globalData.url_open(url);
+                }
+            },
+            
+            /**
+             * WebSocket心跳处理
+             */
+            socket_ping_handle() {
+                // 清除定时任务
+                this.clear_interval_task();
+            
+                // 启动定时任务
+                this.ping_timer = setInterval(() => {
+                    // socket 未连接时静默跳过：既无对象可发，
+                    // 又能避免 socket_send 的失败分支周期性弹出「socket连接失败！」
+                    if (this.task == null) return;
+                    this.socket_send('ping', app.globalData.get_timestamp());
+                }, this.ping_interval * 1000);
+            },
+            /**
+             * 清除定时任务
+             */
+            clear_interval_task() {
+                if (this.ping_timer != null) {
+                    clearInterval(this.ping_timer);
+                    this.ping_timer = null;
+                }
+            },
+            /**
+             * 清除【全部】定时任务 —— 组件销毁时必须调用本方法，而不是只调 clear_interval_task()
+             * <p>
+             * 这些定时器的回调闭包都持有组件实例，漏清会导致组件销毁后仍持续运行：
+             * - pull_live_info_timer 周期性调用 socket_send()，而销毁流程里 socket_close()
+             *   已把 task 置空 → 每次 tick 都弹「socket连接失败！」，并跟随用户切页继续弹
+             * - like_timer / explain_goods_timer 会在 2s / N s 后改写已销毁实例的状态
+             * <p>
+             * 与源工程 shopxo-uniapp 的 clear_all_timers() 保持一致
+             * （源工程还包含 scroll_timeouts，该特性未移植到 mall-app，故此处不涉及）。
+             */
+            clear_all_timers() {
+                this.clear_interval_task();
+                this.clear_socket_reconnect_timer();
+                if (this.pull_live_info_timer != null) {
+                    clearInterval(this.pull_live_info_timer);
+                    this.pull_live_info_timer = null;
+                }
+                if (this.like_timer != null) {
+                    clearTimeout(this.like_timer);
+                    this.like_timer = null;
+                }
+                if (this.explain_goods_timer != null) {
+                    clearTimeout(this.explain_goods_timer);
+                    this.explain_goods_timer = null;
+                }
+                if (this.goods_hide_timer != null) {
+                    clearTimeout(this.goods_hide_timer);
+                    this.goods_hide_timer = null;
+                }
+            },
+
+            /**
+             * WebSocket获取直播间数据
+             */
+            socket_live_info_handle() { 
+                // 清除已有的定时任务
+                if (this.pull_live_info_timer != null) {
+                    clearInterval(this.pull_live_info_timer);
+                    this.pull_live_info_timer = null;
+                }
+                console.log('立即获取直播间数据');
+                // 立即发送获取直播间数据消息
+                this.socket_send('live-info');
+                
+                // 每30秒发送一次获取直播间数据消息
+                this.pull_live_info_timer = setInterval(() => {
+                    // 同 ping：socket 断开期间不发送，避免每 tick 弹一次「socket连接失败！」
+                    // （原来这里还有一句 console.log，每 tick 打印一次，一并去掉）
+                    if (this.task == null) return;
+                    this.socket_send('live-info');
+                }, this.live_info_timing_interval_time * 1000);
+            },
+            
+            /**
+             * 发送WebSocket消息
+             * @param {String} type - 消息类型(init初始化, ping心跳, message消息)
+             * @param {String} content - 消息内容
+             */
+            socket_send(type = 'message', content = '') {
+                if(this.task === null) {
+                    app.globalData.showToast('socket连接失败！');
+                    return false;
+                }
+                // 发送消息
+                let uuid = app.globalData.request_uuid();
+                // token 读取方式必须与 config/request.js 一致（uni.getStorageSync('token')）。
+                // 源工程 ShopXO 的 user 缓存里含 token，故写的是 user.token；但 mall-app 移植后
+                // login.vue 把 token 拆成独立 storage key，userInfo 内已无 token 字段，
+                // 沿用 user.token 会恒为空 → WS 握手被服务端拒绝（init-fail → "connect fail"）。
+                //
+                // 另外必须剥掉 "Bearer " 前缀：login.vue 存的是 `token_type + ' ' + access_token`，
+                // REST 侧由 OAuth2 资源服务器自动剥前缀，而 WS 侧服务端是
+                // `jwtDecoder.decode(token)` 按【原始 JWT】解析，带前缀会直接解码失败。
+                let token = (uni.getStorageSync('token') || '').replace(/^Bearer\s+/i, '');
+                this.task.send({data: JSON.stringify({
+                    application_client_type: this.application_client_type,
+                    application_client_brand: this.application_client_brand,
+                    system_type: app.globalData.data.system_type,
+                    uuid: uuid,
+                    token: token,
+                    live_id: this.live_data.id, // 直播间id
+                    live_user_id: this.live_user_id, // 直播用户id
+                    fd: this.socket_id,
+                    type: type,
+                    content: content
+                })});
+            },
+            //#endregion
+            
+            //#region 监听键盘弹出事件
+            /**
+             * 添加评论
+             */
+            add_comment() {
+                //#ifndef H5
+                this.is_add_comment = true;
+                //#endif
+            },
+            /**
+             * 键盘高度变化监听处理
+             * @param {Object} res - 键盘高度变化事件对象
+             */
+            listener(res) {
+                // 减1是为了兼容，避免跟键盘之间会不连贯
+                if (res.height > 0) {
+                    this.listener_height = res.height - 1;
+                } else {
+                    this.listener_height = 0;
+                }
+            },
+            /**
+             * 绑定键盘高度变化监听事件
+             */
+            bind_keyboard_listener() {
+                uni.onKeyboardHeightChange(this.listener);
+            },
+            /**
+             * 解绑键盘高度变化监听事件
+             */
+            unbind_keyboard_listener() {
+                uni.offKeyboardHeightChange(this.listener);
+            },
+            
+            /**
+             * 评论输入确认事件处理
+             * @param {Event} e - 输入确认事件对象
+             */
+            comment_input_confirm(e) {
+                if (!this.is_live_chat_on) {
+                    return;
+                }
+                const value = e.detail.value;
+                if (value != '') {
+                    this.socket_send('message', e.detail.value);
+                }
+                this.comment_value = '';
+            },
+            //#endregion
+            
+            //#region 商品弹出框
+            /**
+             * 添加商品
+             * 打开商品弹出框
+             */
+            add_goods() {
+                if (!this.is_live_goods_buy_on) {
+                    return;
+                }
+                this.$refs.popupGoodsRef.open();
+            },
+            //#endregion
+            
+            /**
+             * 分享事件处理
+             */
+            share_event() {
+                // 分享菜单处理
+                app.globalData.page_share_handle();
+                const share_info = {
+                    title: this.live_data.title,
+                    desc: this.live_data.describe,
+                    path: "/pages/plugins/live/detail/detail",
+                    query: "id=" + this.live_data.id,
+                    img: this.live_data.icon || "",
+                };
+                // 调取分享弹窗
+                if ((this.$refs.share || null) != null) {
+                    this.$refs.share.init({
+                        share_info: share_info
+                    });
+                }
+            },
+            
+            /**
+             * 点赞点击事件处理
+             * @param {Event} e - 点击事件对象
+             */
+            like_click(e) {
+                if (!this.is_live_like_on || !this.$refs.likeButton) {
+                    return;
+                }
+                this.$refs.likeButton.handleClick(e);
+            },
+            
+            /**
+             * 点赞按钮点击事件处理
+             * @param {Event} e - 点击事件对象
+             */
+            like_button_click(e) {
+                if (!this.is_live_like_on) {
+                    return;
+                }
+                // 临时存储点赞数量
+                this.casual_like_count++;
+                // 如果有点击，清除历史定时任务
+                if (this.like_timer != null) {
+                    clearTimeout(this.like_timer);
+                }
+                // 两秒没有人点赞，则显示临时点赞数量加上原有数量
+                this.like_timer = setTimeout(() => {
+                    // 显示临时点赞数量加上原有数量
+                    this.like_count = this.like_count + this.casual_like_count;
+                    this.socket_send('live-like', this.casual_like_count);
+                    // 完成之后重置临时点赞数量
+                    this.casual_like_count = 0;
+                }, 2000);
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+.top-header {
+    padding: 10rpx 30rpx 10rpx 20rpx;
+    border-radius: 100rpx;
+    z-index: 3;
+    background-color: rgba(40,40,40,0.45);
+}
+.people-number {
+    padding: 6rpx 20rpx;
+    background-color: rgba(40,40,40,0.45);
+    border-radius: 200rpx;
+}
+
+.avatar {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 30rpx;
+}
+
+.nickname {
+    max-width: 200rpx;
+    font-size: 28rpx;
+    color: #fff;
+    font-weight: bold;
+}
+
+.level {
+    font-size: 24rpx;
+    color: #fff;
+}
+
+.viewer-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: -20rpx; /* 重叠部分的宽度 */
+}
+
+.viewer-avatar {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 30rpx;
+    border: 3rpx solid #ffffff; /* 添加白色边框使其更清晰 */
+}
+.viewer-back {
+    // width: 70rpx;
+    // height: 70rpx;
+    border-radius: 30rpx;
+}
+
+.follow-btn {
+    margin-left: 20rpx;
+    padding: 8rpx 20rpx;
+    background-color: #ff4d7e;
+    color: #fff;
+    font-size: 28rpx;
+    border-radius: 20rpx;
+}
+
+.rank-tags {
+    margin-left: 20rpx;
+}
+
+.rank-tag {
+    font-size: 24rpx;
+    color: #fff;
+    margin-right: 10rpx;
+}
+
+.bulletin-area {
+    max-height: 600rpx;
+    height: auto;
+}
+
+.cr-blue {
+    color: #9DE3F7
+}
+
+.bulletin-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 6rpx 16rpx;
+    background-color: rgba(40,40,40,0.45);
+    border-radius: 25rpx;
+}
+
+.bulletin-item-avatar {
+    width: 30rpx;
+    height: 30rpx;
+    border-radius: 15rpx;
+    margin-right: 10rpx;
+}
+
+.content-container {
+    display: inline-block;
+    line-height: 30rpx;
+    vertical-align: top;
+    width: calc(100% - 40rpx); /* 减去头像宽度和间距 */
+}
+
+.user-name {
+    font-size: 28rpx;
+    margin-right: 10rpx;
+    display: inline;
+}
+
+.bulletin-text {
+    font-size: 28rpx;
+    color: #fff;
+    line-height: 30rpx;
+    white-space: pre-line;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    display: inline;
+}
+
+.input-field {
+    flex: 1;
+    padding: 10rpx;
+    border: 1rpx solid #ddd;
+    border-radius: 20rpx;
+    font-size: 28rpx;
+}
+
+.action-btn {
+    width: 60rpx;
+    height: 60rpx;
+    margin-left: 20rpx;
+    justify-content: center;
+    align-items: center;
+}
+.bottom-actions-input {
+    padding: 16rpx 22rpx;
+    border-radius: 50rpx;
+    box-sizing: border-box;
+    color: #fff;
+    background: rgba(40,40,40,0.45);
+}
+.bottom-actions-input input {
+    color: #fff;
+}
+.bottom-actions-input input::placeholder {
+    color: #fff;
+}
+.bottom-actions-button {
+    border-radius: 50rpx;
+    background: rgba(40,40,40,0.45);
+}
+.bottom-actions-icon {
+    background: rgba(40,40,40,0.45);
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 20rpx;
+}
+.bottom-actions-icon-placeholder {
+    visibility: hidden;
+    pointer-events: none;
+}
+.bottom-actions-input-placeholder {
+    min-height: 72rpx;
+    visibility: hidden;
+    pointer-events: none;
+}
+.keyboard-input {
+    position: fixed;
+    left: 0;
+    z-index: 99;
+    background: #fff;
+    padding: 20rpx 16rpx;
+    box-sizing: border-box;
+}
+
+.keyboard-input-input { 
+    padding: 16rpx 22rpx;
+    border: 2rpx solid #ddd;
+    border-radius: 50rpx;
+}
+
+.bulletin-tips {
+    position: absolute;
+    left: 0;
+    bottom: 8rpx;
+    z-index: 3;
+}
+
+.bulletin-tips-content {
+    background: #fff;
+    border-radius: 200rpx;
+    padding: 6rpx 20rpx;
+}
+
+.user-comes {
+    min-width: 100rpx;
+    padding: 6rpx 10rpx 6rpx 20rpx;
+    background-color: rgba(40,40,40,0.45);
+    border-radius: 200rpx;
+}
+
+.countdown-display {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+    z-index: 999;
+    background: rgba(40,40,40,0.45);
+    .countdown-text {
+        color: #fff;
+        font-size: 50px;
+        text-align: center;
+        font-weight: bold;
+    }
+}
+
+.countdown-animation {
+    animation: zoomOut 1s ease-in-out forwards;
+}
+@keyframes zoomOut {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+/* 讲解商品信息 */
+.explain-goods {
+    width: 200rpx;
+    background: #fff;
+    padding: 4rpx;
+    box-sizing: border-box;
+    position: absolute;
+    right: 0;
+    bottom: 100rpx;
+    border-radius: 20rpx;
+    overflow: hidden;
+    .explain-subscript {
+        position: absolute;
+        left: 5rpx;
+        top: 5rpx;
+        right: 5rpx;
+        .explain-progress {
+            padding: 0rpx 8rpx;
+            background: rgba(40,40,40,0.45);
+            border-radius: 10rpx;
+        }
+        .explain-close {
+            margin-right: 5rpx;
+            padding: 6rpx;
+            background: rgba(40,40,40,0.45);
+            border-radius: 50rpx;
+        }
+    }
+}
+/* #ifdef MP-WEIXIN | APP-PLUS */
+    .bulletin-area {
+        ::v-deep ::-webkit-scrollbar
+        {
+            width: 0rpx!important;
+            height: 0rpx!important;
+            background-color: transparent;
+        }
+    }
+/* #endif */
+
+/* 顶部返回和搜索栏样式 */
+.header-top {
+    padding: 0 20rpx;
+    box-sizing: border-box;
+    z-index: 3;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+.header-top ::v-deep .search-bar {
+    background: rgba(255,255,255,0.5);
+    border-color: transparent;
+}
+</style>

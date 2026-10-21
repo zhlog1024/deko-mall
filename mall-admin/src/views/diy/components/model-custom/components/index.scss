@@ -1,0 +1,326 @@
+@use "../../../styles/variables" as *;
+.siderbar {
+  width: 34rem;
+  overflow: hidden;
+  :deep(.el-collapse) {
+    border: 0;
+    .el-collapse-item__header {
+      height: 20px;
+      font-size: 14px;
+      color: #606266;
+      font-weight: 400;
+    }
+    .el-collapse-item__wrap {
+      margin-top: 12px;
+    }
+    .el-collapse-item__wrap,
+    .el-collapse-item__header {
+      border: 0;
+    }
+    .el-collapse-item__content {
+      padding-bottom: 0;
+    }
+  }
+  .component {
+    .item {
+      width: calc(100% / 3);
+      padding: 0.5rem;
+      .img {
+        width: 3rem;
+        height: 3rem;
+      }
+    }
+    .siderbar-item {
+      padding: 0.5rem;
+    }
+  }
+  .siderbar-item:hover {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 0.5rem 0 rgba(24, 144, 255, 0.3);
+    transform: scale(1.05);
+    transition: all 0.4s;
+  }
+}
+.main {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  .model-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    height: 100%;
+    :deep(.vdr-container) {
+      border: 0;
+      .vdr-handle.vdr-handle-tl,
+      .vdr-handle.vdr-handle-tr,
+      .vdr-handle.vdr-handle-tm,
+      .vdr-handle.vdr-handle-ml,
+      .vdr-handle.vdr-handle-mr,
+      .vdr-handle.vdr-handle-bl,
+      .vdr-handle.vdr-handle-bm,
+      .vdr-handle.vdr-handle-br {
+        width: 5px;
+        height: 5px;
+        display: none !important;
+      }
+      .vdr-handle-tl {
+        top: -3px;
+        left: -3px;
+        cursor: nw-resize;
+      }
+      .vdr-handle-tm {
+        top: -3px;
+        left: 50%;
+        margin-left: -3px;
+        cursor: n-resize;
+      }
+      .vdr-handle-tr {
+        top: -3px;
+        right: -3px;
+        cursor: ne-resize;
+      }
+      .vdr-handle-ml {
+        top: 50%;
+        margin-top: -3px;
+        left: -3px;
+        cursor: w-resize;
+      }
+      .vdr-handle-mr {
+        top: 50%;
+        margin-top: -3px;
+        right: -3px;
+        cursor: e-resize;
+      }
+      .vdr-handle-bl {
+        bottom: -3px;
+        left: -3px;
+        cursor: sw-resize;
+      }
+      .vdr-handle-bm {
+        bottom: -3px;
+        left: 50%;
+        margin-left: -3px;
+        cursor: s-resize;
+      }
+      .vdr-handle-br {
+        bottom: -3px;
+        right: -3px;
+        cursor: se-resize;
+      }
+    }
+    :deep(.plug-in-show-tabs.vdr-container) {
+      .vdr-handle.vdr-handle-tl,
+      .vdr-handle.vdr-handle-tr,
+      .vdr-handle.vdr-handle-tm,
+      .vdr-handle.vdr-handle-ml,
+      .vdr-handle.vdr-handle-mr,
+      .vdr-handle.vdr-handle-bl,
+      .vdr-handle.vdr-handle-bm,
+      .vdr-handle.vdr-handle-br {
+        display: block !important;
+        z-index: 1;
+      }
+    }
+    :deep(.plug-in-show-tabs.vdr-handle-z-index.vdr-container) {
+      .vdr-handle.vdr-handle-tl,
+      .vdr-handle.vdr-handle-tr,
+      .vdr-handle.vdr-handle-tm,
+      .vdr-handle.vdr-handle-ml,
+      .vdr-handle.vdr-handle-mr,
+      .vdr-handle.vdr-handle-bl,
+      .vdr-handle.vdr-handle-bm,
+      .vdr-handle.vdr-handle-br {
+        display: block !important;
+        z-index: 0;
+      }
+    }
+    .plug-in-border {
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0rem 0 0rem 0.1rem $cr-main;
+      border: 0;
+    }
+    .area-box {
+      position: absolute;
+      background: rgba(42, 148, 255, 0.25);
+      border: 1px dashed #8ec6ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #1989fa;
+      font-size: 1.2rem;
+      z-index: 6;
+      cursor: move;
+      transition: transform 0.1s;
+      .del-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #1890ff;
+        color: #fff;
+        text-align: center;
+        border-radius: 0 0 0 0.3rem;
+        position: absolute;
+        right: 0.7rem;
+        top: 0.7rem;
+        transform: translate3d(50%, -50%, 0);
+        cursor: default;
+        width: 1.6rem;
+        height: 1.6rem;
+        line-height: 1.6rem;
+        z-index: 1;
+        i {
+          font-size: 0.9rem;
+        }
+      }
+      .drag-btn {
+        position: absolute;
+        width: 0.7rem;
+        height: 0.7rem;
+        background: #f0f0f0;
+        border: 0.1rem solid #333;
+        z-index: 1;
+      }
+      .drag-tl {
+        left: -0.4rem;
+        top: -0.4rem;
+        cursor: nw-resize;
+      }
+      .drag-tc {
+        left: 50%;
+        top: -0.4rem;
+        transform: translateX(-50%);
+        cursor: n-resize;
+      }
+      .drag-lc {
+        left: -0.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: w-resize;
+      }
+      .drag-bl {
+        left: -0.4rem;
+        bottom: -0.4rem;
+        cursor: sw-resize;
+      }
+      .drag-bc {
+        left: 50%;
+        bottom: -0.4rem;
+        transform: translateX(-50%);
+        cursor: s-resize;
+      }
+      .drag-br {
+        right: -0.4rem;
+        bottom: -0.4rem;
+        cursor: se-resize;
+      }
+      .drag-rc {
+        right: -0.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: e-resize;
+      }
+      .text {
+        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 100%;
+        max-height: 100%;
+        text-align: center;
+        align-items: center;
+        color: #fff;
+        font-size: 1.2rem;
+        .name {
+          color: #fff;
+          margin: 0 0.2rem;
+        }
+        .status {
+          margin: 0 0.2rem;
+        }
+      }
+    }
+  }
+}
+.selected {
+  overflow: hidden;
+}
+.assembly {
+  height: calc(100% - 3rem);
+  width: calc(100% - 0.6rem);
+  overflow: hidden;
+  overflow-y: auto;
+  .item {
+    width: calc(33% - 1rem);
+    padding: 1rem 1.5rem;
+    background: #f6f6f6;
+    border-radius: 0.4rem;
+  }
+  .item-active {
+    border: 0.1rem solid $cr-main;
+    padding: 0.8rem 1.3rem;
+  }
+}
+.area {
+  position: absolute;
+  background: rgba(41, 128, 185, 0.3);
+  border: 1px dashed #34495e;
+  width: 0rem;
+  height: 0rem;
+  left: 0rem;
+  top: 0rem;
+  z-index: 6;
+  display: none;
+}
+
+.clear-selection {
+  cursor: pointer;
+  color: $cr-main;
+}
+
+.drawer-container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  .drawer-custom-drag-bg {
+    background: #f2f8ff;
+  }
+  .drawer-drag-area {
+    height: 100%;
+    overflow-y: auto;
+  }
+  .drawer-drag {
+    height: 4rem;
+    cursor: move;
+  }
+  .drawer-drag:hover {
+    background: #f2f8ff;
+    .draggable-icon {
+      opacity: 1 !important;
+    }
+  }
+  .draggable-icon {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    right: 1rem;
+    color: #8a8a8a;
+    cursor: pointer;
+  }
+}
+
+.plug-in-show-component-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 0.1rem dashed #999;
+  border-radius: inherit;
+  pointer-events: none; /* 防止影子部分阻止鼠标事件 */
+}

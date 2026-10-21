@@ -1,0 +1,28 @@
+server:
+  port: 8801
+
+spring:
+  mvc:
+    path-match:
+      matching-strategy: ant_path_matcher
+  cloud:
+    nacos:
+      # 注册中心
+      discovery:
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        server-addr: ${NACOS_SERVER_ADDR}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      # 配置中心
+      config:
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        server-addr: ${NACOS_SERVER_ADDR}
+        file-extension: yaml
+        shared-configs[0]:
+          data-id: mall-common.yaml
+          group: ${NACOS_GROUP:DEFAULT_GROUP}
+          refresh: true
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}

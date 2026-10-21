@@ -1,0 +1,90 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${mysql.host}:${mysql.port}/${MYSQL_DATABASE:deko_mall}?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: ${mysql.username}
+    password: ${mysql.password}
+  data:
+    redis:
+      database: ${redis.database}
+      host: ${redis.host}
+      port: ${redis.port}
+      password: ${redis.password}
+      lettuce:
+        pool:
+          min-idle: 1
+  rabbitmq:
+    host: ${rabbitmq.host}
+    port: ${rabbitmq.port}
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+
+mybatis-plus:
+  configuration:
+    # 驼峰下划线转换
+    map-underscore-to-camel-case: true
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 当前服务不启用 Seata。
+seata:
+  enabled: false
+
+# Feign 配置
+feign:
+  sentinel:  # 开启feign对sentinel的支持
+    enabled: false
+
+# 安全配置
+security:
+  # 白名单路径
+  whitelist-paths:
+      - /feign-api/v1/members/mobile/wx/params
+      - /feign-api/v1/members/mobile/{mobile}
+      - /feign-api/v1/members
+      - /feign-api/v1/members/user/pay/success
+      - /feign-api/v1/asset/operate
+      - /feign-api/v1/members/openid/wx/{code}
+      - /feign-api/v1/members/get/openid/{id}
+      - /app-api/v1/members/reset-password
+
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.deko.mall.ums.controller
+  # Api文档信息
+  info:
+    title: Deko Mall 会员服务
+    version: ${APP_VERSION:0.1.0-SNAPSHOT}
+    description: 会员、地址等接口
+    contact:
+      name: Deko Mall
+      url: https://github.com/zhlog1024/deko-mall
+    license:
+      name: Apache 2.0
+      url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: false
+  setting:
+    language: zh_cn
+
+# 微信小程序
+wx:
+  miniapp:
+    appId: ${WX_APP_ID:wx0000000000000000}
+    appSecret: ${WX_APP_SECRET:CHANGEME}

@@ -1,0 +1,344 @@
+/* 宽高 */
+.w {
+    width: 100%;
+}
+.h {
+    height: 100%;
+}
+.m-h {
+    min-height: 100%;
+}
+.v-h {
+    height: 100vh;
+}
+.v-m-h {
+    min-height: 100vh;
+}
+
+/**
+ * 隐藏显示
+*/
+.hide {
+    display: none !important;
+}
+.block {
+    display: block !important;
+}
+.inline-block {
+    display: inline-block;
+}
+.inline-flex {
+    display: inline-flex;
+}
+
+.c-pointer {
+    cursor: pointer;
+}
+
+/**
+ * flex布局
+*/
+.flex {
+    display: flex;
+}
+.flex-row {
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+}
+.flex-col {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+.jc-sb {
+    justify-content: space-between;
+}
+.jc-sa {
+    justify-content: space-around;
+}
+.jc-c {
+    justify-content: center;
+}
+.jc-s {
+    justify-content: flex-start;
+}
+.jc-e {
+    justify-content: flex-end;
+}
+.align-c {
+    align-items: center;
+}
+.align-b {
+    align-items: baseline;
+}
+.align-e {
+    align-items: flex-end;
+}
+.align-s {
+    align-items: flex-start;
+}
+.self-c {
+    align-self: center;
+}
+.self-s {
+    align-self: flex-start;
+}
+.self-e {
+    align-self: flex-end;
+}
+.flex-1 {
+    flex: 1;
+}
+.flex-2 {
+    flex: 2;
+}
+.flex-shrink {
+    flex-shrink: 0;
+}
+.flex-shrink-1 {
+    flex-shrink: 1;
+}
+.flex-width {
+    width: 0;
+}
+.flex-width-half {
+    width: 50%;
+}
+.flex-width-half-half {
+    width: 25%;
+}
+.flex-wrap {
+    flex-wrap: wrap;
+}
+.flex-nowrap {
+    flex-wrap: nowrap;
+}
+
+/**
+ * 字体宽度
+*/
+.fw-n {
+    font-weight: 400;
+}
+.fw {
+    font-weight: 500;
+}
+.fw-b {
+    font-weight: bold;
+}
+
+/**
+ * 字体居中
+*/
+.tc {
+    text-align: center;
+}
+.tl {
+    text-align: left;
+}
+.tr {
+    text-align: right;
+}
+
+// 边框为0
+.br-none {
+    border: 0 !important;
+}
+
+/**
+ * 圆角
+*/
+.radius-xs {
+    border-radius: 0.2rem;
+}
+.radius-sm {
+    border-radius: 0.4rem;
+}
+.radius,
+.radius-md {
+    border-radius: 0.6rem;
+}
+.radius-lg {
+    border-radius: 0.8rem;
+}
+.radius-xl {
+    border-radius: 1.2rem;
+}
+.round {
+    border-radius: 10000rem;
+}
+
+/**
+ * 定位
+*/
+.re {
+    position: relative;
+}
+.abs {
+    position: absolute;
+}
+.fi {
+    position: fixed;
+}
+.middle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.fill {
+    position: absolute;
+    inset: 0;
+}
+.x-middle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.z-i {
+    z-index: 1;
+}
+.z-deep {
+    z-index: 2;
+}
+.z-top {
+    z-index: 9;
+}
+
+// 超出隐藏
+.oh {
+    overflow: hidden;
+}
+.o-auto {
+    overflow: auto;
+}
+
+/**
+ * 不允许换行
+*/
+.nowrap {
+    white-space: nowrap;
+}
+
+// 阴影
+.box-shadow-sm {
+    box-shadow: 0 0.5rem 2rem rgba(50, 55, 58, 0.1);
+}
+.box-shadow-md {
+    box-shadow: 0 0.2rem 0.8rem rgba(50, 55, 58, 0.1);
+}
+.box-shadow-lg {
+    box-shadow: 0 0.8rem 3.4rem rgba(50, 55, 58, 0.1);
+}
+
+/*css主要部分的样式*/
+/*定义滚动条宽高及背景，宽高分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar {
+    width: 0.6rem;
+    height: 0.6rem;
+}
+/*定义滚动条的轨道颜色、内阴影及圆角*/
+::-webkit-scrollbar-track {
+    border-radius: 0.4rem;
+}
+/*定义滑块颜色、内阴影及圆角*/
+::-webkit-scrollbar-thumb {
+    border-radius: 0.8rem;
+    background-color: #dddee0;
+}
+/*定义滑块悬停变化颜色、内阴影及圆角*/
+::-webkit-scrollbar-thumb:hover {
+    background-color: #c7c9cc;
+}
+
+.animate-linear {
+    transition: all 0.3s linear;
+}
+
+// 透明背景
+.mask {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+// 分割线
+.divider-line {
+    height: 0.8rem;
+    background-color: #f0f2f5;
+}
+
+// 禁止双击选中
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+// 显示两行
+.multi-text {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 3.2rem;
+    line-height: 1.6rem;
+    font-size: 1.4rem;
+    white-space: initial;
+}
+// 数字和文字超出范围不整体换行
+.text-word-break {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.indicator_up_down_location {
+    position: absolute;
+    z-index: 1;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    .dot-item {
+        margin: 0.3rem 0;
+    }
+}
+.indicator_about_location {
+    position: absolute;
+    z-index: 1;
+    padding-right: 10px;
+    padding-left: 10px;
+    display: flex;
+    .dot-item {
+        margin: 0 0.3rem;
+    }
+}
+.mark-name-style {
+    background: #D8D8D8 linear-gradient(107deg, #FC6F31 0%, #E22C08 100%);
+    font-size: 1rem;
+    line-height: 1.2rem;
+    padding: 0.2rem 0.4rem;
+    color: #fff;
+    white-space: nowrap;
+    border-radius: 0.8rem 0 0.8rem 0;
+}
+
+
+.message-box-custom {
+    .el-message__icon {
+        background: url('@/assets/loading.svg') no-repeat center; /* 使用自定义图标 */
+        background-size: contain;
+        animation: message__icon 2s infinite linear;
+    }
+}
+@keyframes message__icon {
+    0%{
+        transform: rotate(0deg);
+    }
+    100%{
+        transform: rotate(360deg);
+    }
+}

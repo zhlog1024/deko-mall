@@ -1,0 +1,659 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+				"navigationStyle": "custom",
+				// #endif
+				// #ifdef MP-ALIPAY
+				"transparentTitle": "always",
+				"titlePenetrate": "YES",
+				// #endif
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "",
+				"usingComponents": {
+					"component-diy": "/pages/diy/components/diy/diy"
+				},
+				"componentPlaceholder": {
+					"component-diy": "view"
+				}
+			}
+
+		},
+		{
+			"path": "pages/cart/cart",
+			"style": {
+				// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+				"navigationStyle": "custom",
+				// #endif
+				// #ifdef MP-ALIPAY
+				"transparentTitle": "always",
+				"titlePenetrate": "YES",
+				// #endif
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/goods-category/goods-category",
+			"style": {
+				// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+				"navigationStyle": "custom",
+				// #endif
+				// #ifdef MP-ALIPAY
+				"transparentTitle": "always",
+				"titlePenetrate": "YES",
+				// 该页不显示滚动条
+				"scrollIndicator": "none",
+				// #endif
+				"enablePullDownRefresh": false,
+				// 禁止页面下拉
+				"disableScroll": true,
+				"navigationBarTitleText": ""
+				}
+				},
+		{
+					"path": "pages/user/user",
+			"style": {
+				// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+				"navigationStyle": "custom",
+				// #endif
+				// #ifdef MP-ALIPAY
+				"transparentTitle": "always",
+				"titlePenetrate": "YES",
+				// #endif
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "",
+				"app-plus": {
+					"bounce": "none"
+				}
+			}
+		}
+	],
+	"subPackages":[
+	{
+			"root": "pages/article-category",
+			"pages": [
+				{
+					"path": "article-category",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": "所有文章"
+					}
+				}
+			]
+		},
+	{
+			"root": "pages/article-detail",
+			"pages": [
+				{
+					"path": "article-detail",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": "文章详情"
+					}
+				}
+			]
+		},
+	{
+			"root": "pages/customview",
+			"pages": [
+				{
+					"path": "customview",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": "自定义页面"
+					}
+				}
+			]
+		},
+	{
+			"root": "pages/diy",
+			"pages": [
+				{
+					"path": "diy",
+					"style": {
+						// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+						"navigationStyle": "custom",
+						// #endif
+						// #ifdef MP-ALIPAY
+						"transparentTitle": "always",
+						"titlePenetrate": "YES",
+						// #endif
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": "",
+						"usingComponents": {
+							"component-diy": "/pages/diy/components/diy/diy"
+						},
+						"componentPlaceholder": {
+							"component-diy": "view"
+						}
+					}
+				}
+			]
+		},
+	{
+			"root": "pages/message",
+			"pages": [
+				{
+					"path": "message",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": ""
+					}
+				}
+			]
+		},
+	{
+			"root": "pageUser",
+			"pages": [
+				{
+					"path": "pages/balance",
+					"style": {
+						"navigationBarTitleText": "我的余额"
+					}
+				},
+
+				{
+					"path": "pages/myPoints",
+					"style": {
+						"navigationBarTitleText": "我的积分"
+					}
+				}
+			]
+		},
+	{
+		"root": "pages/user-order-comments",
+		"pages": [
+			{
+				"path": "user-order-comments",
+				"style": {
+					"enablePullDownRefresh": true, "navigationBarTitleText": "发表评价"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/user-order",
+		"pages": [
+			{ "path": "user-order", "style": { "navigationStyle": "custom", "enablePullDownRefresh": true } }
+		]
+	},
+	{
+		"root": "pages/user-order-detail",
+		"pages": [
+			{ "path": "user-order-detail", "style": { "enablePullDownRefresh": true } }
+		]
+	},
+	{
+		"root": "pages/user-orderaftersale",
+		"pages": [
+			{ "path": "user-orderaftersale", "style": { "navigationStyle": "custom", "enablePullDownRefresh": true } }
+		]
+	},
+	{
+		"root": "pages/user-orderaftersale-detail",
+		"pages": [
+			{ "path": "user-orderaftersale-detail", "style": { "enablePullDownRefresh": true } }
+		]
+	},
+	{
+		"root": "pages/user-goods-comments",
+		"pages": [
+			{
+				"path": "user-goods-comments",
+				"style": {
+					"enablePullDownRefresh": true, "navigationBarTitleText": "我的评价"
+				}
+			}
+		]
+		},
+	{
+			"root": "pages/user-favor",
+			"pages": [
+				{
+					"path": "user-favor",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": ""
+					}
+				}
+			]
+		},
+	{
+			"root": "pages/user-goods-browse",
+			"pages": [
+				{
+					"path": "user-goods-browse",
+					"style": {
+						"enablePullDownRefresh": true,
+						"navigationBarTitleText": ""
+					}
+				}
+			]
+		}
+,
+	{
+		"root": "pages/cart-page",
+		"pages": [
+			{
+				"path": "cart-page",
+				"style": {
+					"navigationStyle": "custom",
+					"navigationBarTitleText": ""
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/goods-detail",
+		"pages": [
+			{
+				"path": "goods-detail",
+				"style": {
+				// #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-KUAISHOU || H5 || APP
+				"navigationStyle": "custom",
+				// #endif
+				// #ifdef MP-ALIPAY
+				"transparentTitle": "always",
+				"titlePenetrate": "YES",
+				// #endif
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "",
+				"usingComponents": {
+					"component-goods-comments": "/pages/goods-detail/components/goods-comments/goods-comments",
+					"component-binding-detail-list": "/pages/plugins/binding/components/binding-detail-list/binding-detail-list",
+					"component-shop-list": "/pages/plugins/shop/components/shop-list/shop-list",
+					"component-ask-comments-goods": "/pages/plugins/ask/components/ask-comments-goods/ask-comments-goods",
+					"component-ask-section": "/pages/plugins/ask/components/ask-section/ask-section",
+					"component-coupon-card": "/pages/plugins/coupon/components/coupon-card/coupon-card",
+					"component-goods-compare": "/pages/plugins/goodscompare/components/goods-compare/goods-compare",
+					"component-form-input-base": "/pages/goods-detail/components/form-input/components/form-input/form-input-base"
+				},
+				"componentPlaceholder": {
+					"component-goods-comments": "view",
+					"component-binding-detail-list": "view",
+					"component-shop-list": "view",
+					"component-ask-comments-goods": "view",
+					"component-ask-section": "view",
+					"component-coupon-card": "view",
+					"component-goods-compare": "view",
+					"component-form-input-base": "view"
+				}
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/web-view",
+		"pages": [
+			{
+				"path": "web-view",
+				"style": {
+				"navigationBarTitleText": "网页",
+				"enablePullDownRefresh": false
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/buy",
+		"pages": [
+			{
+				"path": "buy",
+				"style": {
+				"navigationBarTitleText": "确认订单"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/common/open-setting-location",
+		"pages": [
+			{
+				"path": "open-setting-location",
+				"style": {
+				// #ifndef MP-TOUTIAO
+				"navigationStyle": "custom",
+				// #endif
+				"enablePullDownRefresh": false
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/user-address",
+		"pages": [
+			{
+				"path": "user-address",
+				"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/user-address-save",
+		"pages": [
+			{
+				"path": "user-address-save",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/about",
+		"pages": [
+			{
+				"path": "about",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/setup",
+		"pages": [
+			{
+				"path": "setup",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/personal",
+		"pages": [
+			{
+				"path": "personal",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/logout",
+		"pages": [
+			{
+				"path": "logout",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/login",
+		"pages": [
+			{
+				"path": "login",
+				"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/cashier",
+		"pages": [
+			{
+				"path": "cashier",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/paytips",
+		"pages": [
+			{
+				"path": "paytips",
+				"style": {
+				"enablePullDownRefresh": false,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/express/detail",
+		"pages": [
+			{
+				"path": "detail",
+				"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/goods-search-start",
+		"pages": [
+			{
+				"path": "goods-search-start",
+				"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/goods-search",
+		"pages": [
+			{
+				"path": "goods-search",
+				"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": ""
+			}
+			}
+		]
+	},
+	{
+		"root": "pages/goods-comment",
+		"pages": [
+			{
+				"path": "goods-comment",
+				"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "商品评价"
+			}
+			}
+		]
+	}
+,
+	{
+		"root": "pages/plugins/shop/detail",
+		"pages": [
+			{
+				"path": "detail",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "店铺详情"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/shop/index",
+		"pages": [
+			{
+				"path": "index",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "店铺"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/shop/search",
+		"pages": [
+			{
+				"path": "search",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "店铺商品"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/shop/favor",
+		"pages": [
+			{
+				"path": "favor",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "我的收藏店铺"
+				}
+			}
+		]
+	}
+
+
+
+
+
+
+
+
+
+,
+	{
+		"root": "pages/plugins/ask/detail",
+		"pages": [
+			{
+				"path": "detail",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "问答详情"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/ask/list",
+		"pages": [
+			{
+				"path": "list",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "商品问答"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/video/detail",
+		"pages": [
+			{
+				"path": "detail",
+				"style": {
+					"enablePullDownRefresh": false,
+					"navigationBarTitleText": "视频详情"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/video/index",
+		"pages": [
+			{
+				"path": "index",
+				"style": {
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": "视频"
+				}
+			}
+		]
+	},
+	{
+		"root": "pages/plugins/live",
+		"pages": [
+			{
+				"path": "index/index",
+				"style": {
+					"navigationStyle": "custom",
+					"enablePullDownRefresh": true,
+					"navigationBarTitleText": ""
+				}
+			},
+			{
+				"path": "detail/detail",
+				"style": {
+					"navigationStyle": "custom",
+					"disableScroll": true,
+					"enablePullDownRefresh": false,
+					"navigationBarTitleText": ""
+				}
+			},
+			{
+				"path": "search/search",
+				"style": {
+					"navigationStyle": "custom",
+					"enablePullDownRefresh": false,
+					"disableScroll": true,
+					"navigationBarTitleText": ""
+				}
+			},
+			{
+				"path": "search-record/search-record",
+				"style": {
+					"navigationStyle": "custom",
+					"enablePullDownRefresh": false,
+					"disableScroll": true,
+					"navigationBarTitleText": ""
+				}
+			}
+		]
+	}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "Deko Mall",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#f8f8f8"
+	},
+  "tabBar": {
+    "color": "transparent",
+    "borderStyle": "white",
+    "selectedColor": "transparent",
+    "backgroundColor": "transparent",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": ""
+      },
+      {
+        "pagePath": "pages/goods-category/goods-category",
+        "text": ""
+      },
+      {
+        "pagePath": "pages/cart/cart",
+        "text": ""
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": ""
+      }
+    ]
+  }
+}

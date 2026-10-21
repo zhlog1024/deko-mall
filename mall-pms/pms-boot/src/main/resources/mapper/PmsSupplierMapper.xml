@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.pms.mapper.PmsSupplierMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.deko.mall.pms.model.entity.PmsSupplier">
+        <id column="id" property="id"/>
+        <result column="login_name" property="loginName"/>
+        <result column="supplier_code" property="supplierCode"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="audit_status" property="auditStatus"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 供应商分页查询 -->
+    <select id="getSupplierPages" resultType="com.deko.mall.pms.model.entity.PmsSupplier">
+        SELECT
+        s.id,
+        s.login_name,
+        s.supplier_code,
+        s.supplier_name,
+        s.login_name,
+        s.business_license,
+        s.audit_status,
+        s.create_time,
+        s.update_time
+        FROM pms_supplier s
+        <where>
+            <if test="queryParams.keywords != null and queryParams.keywords != ''">
+                AND (
+                s.supplier_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR s.login_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                )
+            </if>
+
+            <if test="queryParams.supplierName != null and queryParams.supplierName != ''">
+                AND s.supplier_name LIKE CONCAT('%', #{queryParams.supplierName}, '%')
+            </if>
+
+            <if test="queryParams.auditStatus != null">
+                AND s.audit_status = #{queryParams.auditStatus}
+            </if>
+
+            <if test="queryParams.supplierId != null">
+                AND s.id = #{queryParams.supplierId}
+            </if>
+
+        </where>
+        ORDER BY s.create_time DESC
+    </select>
+
+</mapper>

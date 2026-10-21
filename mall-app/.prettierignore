@@ -1,0 +1,11 @@
+**/*.md
+**/*.svg
+**/*.ejs
+**/*.html
+**/dist
+**/node_modules
+**/uni_modules
+**/.hbuilderx
+**/*.d.ts
+package.json
+manifest.json

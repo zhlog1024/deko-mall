@@ -1,0 +1,74 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${mysql.host}:${mysql.port}/${MYSQL_DATABASE:deko_mall}?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: ${mysql.username}
+    password: ${mysql.password}
+  data:
+    redis:
+      database: ${redis.database}
+      host: ${redis.host}
+      port: ${redis.port}
+      password: ${redis.password}
+  rabbitmq:
+    host: ${rabbitmq.host}
+    port: ${rabbitmq.port}
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+    virtual-host: ${RABBITMQ_VHOST:/}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+seata:
+  enabled: false
+
+security:
+  whitelist-paths:
+    - /callback-api/v1/live/tencent
+
+# Real streaming requires your own streaming domains and callback signing key.
+live:
+  application-name: Deko Mall
+  push-domain: ${LIVE_PUSH_DOMAIN:}
+  play-domain: ${LIVE_PLAY_DOMAIN:}
+  push-auth-key: ${LIVE_PUSH_AUTH_KEY:}
+  callback-key: ${LIVE_CALLBACK_KEY:}
+  callback-drive-status: false
+  probe-enabled: false
+  ws-host: ${LIVE_WS_HOST:127.0.0.1}
+  ws-port: ${LIVE_WS_PORT:8804}
+  ws-is-wss: 0
+  ws-path: /
+
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.deko.mall.sms.controller
+  # Api文档信息
+  info:
+    title: Deko Mall 营销服务
+    version: ${APP_VERSION:0.1.0-SNAPSHOT}
+    description: 优惠券、广告、直播等营销接口
+    contact:
+      name: Deko Mall
+      url: https://github.com/zhlog1024/deko-mall
+    license:
+      name: Apache 2.0
+      url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: false
+  setting:
+    language: zh_cn

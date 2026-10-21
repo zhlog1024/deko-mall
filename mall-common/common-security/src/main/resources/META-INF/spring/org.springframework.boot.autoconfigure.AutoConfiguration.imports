@@ -1,0 +1,4 @@
+com.deko.mall.common.security.service.PermissionService
+com.deko.mall.common.security.config.ResourceServerConfig
+com.deko.mall.common.security.exception.MyAccessDeniedHandler
+com.deko.mall.common.security.exception.MyAuthenticationEntryPoint

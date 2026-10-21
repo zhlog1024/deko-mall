@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.oms.mapper.OrderItemMapper">
+
+    <!-- 订单商品行列表（订单列表/详情的 items 数据源，含行级履约状态） -->
+    <select id="getOrderItemsByOrderId" resultType="com.deko.mall.oms.model.bo.OrderBO$OrderItem">
+        SELECT id,
+               supplier_id,
+               order_id,
+               spu_id,
+               sku_id,
+               sku_sn,
+               sku_name,
+               pic_url,
+               price,
+               quantity,
+               total_amount,
+               supply_price,
+               retail_price,
+               status,
+               is_commented
+        FROM oms_order_item
+        WHERE order_id = #{orderId}
+          AND deleted = 0
+    </select>
+
+
+</mapper>

@@ -1,0 +1,11 @@
+FROM eclipse-temurin:17-jre-jammy
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata fontconfig fonts-dejavu-core && \
+    rm -rf /var/lib/apt/lists/* && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+ENV TZ=Asia/Shanghai \
+    JAVA_OPTS="-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom"
+WORKDIR /app
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS -jar /app/app.jar"]

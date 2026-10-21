@@ -1,0 +1,88 @@
+/*
+* 地址信息
+*/
+.address-detail .icon {
+    width: 30rpx;
+    height: 35rpx !important;
+}
+.address-detail .text {
+    width: calc(100% - 40rpx);
+}
+.address-detail .text {
+    line-height: 36rpx;
+}
+.no-address {
+    height: 85rpx;
+    line-height: 85rpx;
+}
+.address-alias,
+.address-map-submit {
+    padding: 0 15rpx;
+    line-height: 40rpx;
+}
+
+/*
+* 商品信息
+*/
+.goods-base {
+    min-height: 160rpx;
+    margin-left: 180rpx;
+}
+.goods .goods-item:last-child {
+    border-bottom: 0;
+}
+.goods-image {
+    width: 160rpx;
+    height: 160rpx;
+}
+
+/**
+ * 使用指南
+ */
+.use-guide-switch-scroll .item {
+    width: 240rpx;
+}
+.use-guide-switch-scroll .item .icon-content,
+.use-guide-switch-scroll .item .icon {
+    width: 60rpx;
+    height: 60rpx;
+}
+
+/*
+* 虚拟销售信息
+*/
+.site-fictitious .panel-content .tips-value {
+    color: #f37b1d;
+    background-color: #fff2e9;
+    border-color: #ffebdb;
+}
+.site-fictitious .panel-content .left-image {
+    width: 80rpx;
+    height: 80rpx;
+}
+.site-fictitious .panel-content .right-value {
+    width: calc(100% - 100rpx);
+}
+
+/*
+* 自提信息
+*/
+.site-extraction .panel-content .qrcode {
+    width: 340rpx;
+    height: 340rpx;
+}
+
+/*
+* 订单商品信息弹层
+*/
+.order-item-goods-info-container .nav-base .item:nth-child(1),
+.order-item-goods-info-container .nav-base .item:nth-child(2) {
+    width: 18%;
+}
+.order-item-goods-info-container .nav-base .item:nth-child(3),
+.order-item-goods-info-container .nav-base .item:nth-child(4) {
+    width: 32%;
+}
+.order-item-goods-info-container .scroll-content {
+    height: 70vh;
+}

@@ -1,0 +1,49 @@
+# ============================================
+# Mall Admin 前端项目 .gitignore
+# ============================================
+
+# ==================== 依赖目录 ====================
+node_modules/
+
+# ==================== 构建输出 ====================
+dist/
+dist-ssr/
+*.local
+
+# ==================== 日志文件 ====================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==================== 编辑器配置 ====================
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.history/
+
+# ==================== 系统文件 ====================
+.DS_Store
+Thumbs.db
+
+# ==================== 编辑器临时文件 ====================
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+*.bak
+
+# ==================== 缓存和统计 ====================
+package-lock.json
+pnpm-lock.yaml
+stats.html
+.eslintcache
+.stylelintcache
+
+# ==================== 环境变量 ====================
+.env.local
+.env.*.local

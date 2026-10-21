@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.deko.mall.system.api.fallback.SystemFeignFallbackClient

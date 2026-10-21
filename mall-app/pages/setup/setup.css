@@ -1,0 +1,43 @@
+.panel-item .item:not(:first-child) {
+    border-top: 1px solid #f5f5f5 !important;
+}
+.user-avatar {
+    width: 80rpx;
+    height: 80rpx !important;
+}
+
+/**
+ * 退出登录 & 账号注销
+ */
+.logout-section {
+    margin-top: 48rpx;
+}
+.logout-card {
+    padding: 28rpx 0;
+    text-align: center;
+    border-radius: 24rpx;
+}
+.logout-card + .logout-card {
+    margin-top: 20rpx;
+}
+.logout-text {
+    font-size: 30rpx;
+    color: #FF6B6B;
+    font-weight: 500;
+}
+.logout-text.secondary {
+    color: #6B6B6B;
+    font-weight: 400;
+}
+
+/**
+ * 多语言
+ */
+.popup-language {
+    height: 100vh;
+}
+
+.popup-language .list {
+    height: calc(100vh - 95rpx);
+    overflow-y: auto;
+}

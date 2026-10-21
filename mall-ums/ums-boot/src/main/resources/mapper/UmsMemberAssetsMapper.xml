@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.ums.mapper.UmsMemberAssetsMapper">
+
+
+    <select id="selectByMemberAndCode" resultType="com.deko.mall.ums.model.domain.UmsMemberAssets">
+        SELECT *
+        from ums_member_assets
+        where member_id = #{memberId}
+          and asset_code = #{assetCode}
+    </select>
+    <select id="getNeedInitUser" resultType="java.lang.Long">
+        SELECT id
+        from ums_member
+        where id not in (select member_id
+                         from ums_member_assets)
+    </select>
+</mapper>

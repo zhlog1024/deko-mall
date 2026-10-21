@@ -1,0 +1,76 @@
+import request from "@/utils/request";
+import { AxiosPromise } from "axios";
+
+/**
+ * 获取商品分类列表
+ */
+export function listCategories(queryParams: object) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories",
+    method: "get",
+    params: queryParams,
+  });
+}
+
+/**
+ * 获取商品分类级联器树形列表
+ */
+export function getCategoryOptions(): AxiosPromise<OptionType[]> {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories/options",
+    method: "get",
+  });
+}
+
+/**
+ * 获取商品分类详情
+ */
+export function getCategoryDetail(id: number) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories/" + id,
+    method: "get",
+  });
+}
+
+/**
+ * 添加商品分类
+ */
+export function addCategory(data: object) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories",
+    method: "post",
+    data: data,
+  });
+}
+
+/**
+ * 修改商品分类
+ */
+export function updateCategory(id: number, data: object) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories/" + id,
+    method: "put",
+    data: data,
+  });
+}
+
+/**
+ * 删除商品分类
+ */
+export function deleteCategories(ids: string) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories/" + ids,
+    method: "delete",
+  });
+}
+
+/**
+ * 选择性修改商品分类
+ */
+export function updateCategoryPart(id: number, data: object) {
+  return request({
+    url: "/mall-pms/scm-api/v1/categories/" + id,
+    method: "patch",
+    data: data,
+  });
+}

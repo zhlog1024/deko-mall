@@ -1,0 +1,96 @@
+<template>
+    <view :class="theme_view + ' pr'">
+        <view class="pr live-bg" @click="handle_click" @touchend="handle_touch_end" :data-ignore="false">
+            <component-live-video v-if="!is_live_ended" ref="liveVideo" :propSrc="live_video_src" @ended="ended" @loadedmetadata="loadedmetadata" @mutedAutoPlaySuccess="muted_auto_play_success" @mutedAutoPlayError="muted_auto_play_error" @mutedTap="muted_tap"></component-live-video>
+            <!-- 简化版点赞效果组件 -->
+            <component-full-screen-like-effect v-if="live_feature_ready && is_live_like_on" ref="fullScreenLikeEffect" :propCustomImages="like_show_imgs"></component-full-screen-like-effect>
+        </view>
+        <template v-if="!is_loading"> 
+            <view class="live-content pointer-events-none">
+                <component-live-content ref="liveContent" :propWindowWidth="windowWidth" :propWindowHeight="windowHeight" :propLiveData="live_data" :propLiveConfig="live_config" :propLiveShowImgs="like_show_imgs" @liveBack="live_back" @liveStatus="socket_live_status"></component-live-content>
+            </view>
+            <view v-if="is_live_ended" class="live-ended flex-row align-c jc-c">
+                <view class="flex-col align-c">
+                    <text class="live-ended-text">直播已结束</text>
+                    <button plain size="mini" class="mt-10 live-ended-button" @tap.stop="live_back">
+                        <text class="cr-f pa-5">退出直播间</text>
+                    </button>
+                </view>
+            </view>
+            <!-- 静音提示 -->
+            <view v-if="!is_live_ended && is_muted_auto_play_success && !live_be_right_back_error" class="live-muted flex-row align-c jc-c pointer-events-none">
+                <view class="live-muted-tips pointer-events-auto">
+                    因浏览器限制静音，<text class="ml-5 cr-f live-muted-text" @tap="muted_tap">请点击打开声音</text>
+                </view>
+            </view>
+            <!-- 视频播放提示 -->
+            <view v-if="!is_live_ended && is_muted_auto_play_error && !live_be_right_back_error" class="live-play flex-row align-c jc-c pointer-events-none">
+                <u-icon propName="bofang" class="component-icon-play" propSize="200rpx" propColor="#fff" @click="muted_tap"></u-icon>
+            </view>
+            <!-- 主播暂时离开的提示信息-->
+            <view v-if="live_be_right_back_error" class="live-pause flex-row align-c jc-c pointer-events-none">
+                <view class="flex-1 flex-col align-c jc-c">
+                    <u-icon propName="coffee" propSize="100rpx" propColor="#fff"></u-icon>
+                    <text class="text-size mt-5 cr-white">主播暂时离开</text>
+                    <text class="text-size-sm mt-5 cr-white">休息片刻，更多精彩马上到来</text>
+                </view>
+            </view>
+        </template>
+    </view>
+</template>
+<script>
+    import componentLiveVideo from './components/video/video.vue';
+    import componentLiveContent from './components/live-content/live-content.vue';
+    // 引入点赞效果组件
+    import componentFullScreenLikeEffect from './components/full-screen-like-effect/full-screen-like-effect.vue';
+    // 引入混入公共逻辑，避免nvue和vue使用同一套逻辑出现问题
+    import mixins from './mixins/mixins.js';
+    const app = getApp();
+    export default {
+        components: {
+            componentLiveVideo,
+            componentLiveContent,
+            componentFullScreenLikeEffect
+        },
+        mixins: [mixins],
+        data() {
+            return {
+                theme_view: app.globalData.get_theme_value_view(),
+                is_muted_auto_play_success: false,
+                is_muted_auto_play_error: false,
+            }
+        },
+        methods: {
+            muted_auto_play_success(is_muted) {
+                if (is_muted) {
+                    // 静音播放成功, 显示静音播放按钮
+                    this.is_muted_auto_play_success = true;
+                    // 隐藏自动播放按钮
+                    this.is_muted_auto_play_error = false;
+                }
+            },
+            // 静音自动播放失败
+            muted_auto_play_error() {
+                // 隐藏加载中
+                uni.hideLoading();
+                // 显示自动播放按钮
+                this.is_muted_auto_play_error = true;
+                // 隐藏静音提示
+                this.is_muted_auto_play_success = false;
+            },
+            // 静音提示点击
+            muted_tap() {
+                if (this.$refs.liveVideo) {
+                    this.$refs.liveVideo.muted_tap();
+                }
+                // 关闭静音提示
+                this.is_muted_auto_play_success = false;
+                // 关闭播放按钮
+                this.is_muted_auto_play_error = false;
+            }
+        },
+    }
+</script>
+<style lang="scss" scoped>
+    @import './detail.css';
+</style>

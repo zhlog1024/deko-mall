@@ -1,0 +1,33 @@
+/*
+* 导航
+*/
+.nav-base {
+    display: flex;
+    justify-content: space-around;
+}
+.nav-base .item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+* 列表
+*/
+.goods-base {
+    min-height: 160rpx;
+    margin-left: 180rpx;
+}
+.goods-title {
+    line-height: 36rpx;
+}
+.list-item .goods-item:not(:last-child) {
+    border-bottom: 1px dashed #efefef;
+}
+.goods-item {
+    padding: 20rpx 10rpx;
+}
+.goods-image {
+    width: 160rpx;
+    height: 160rpx;
+}

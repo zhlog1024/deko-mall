@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.oms.mapper.OrderAfterSaleItemMapper">
+
+    <!-- 批量保存售后商品明细 -->
+    <insert id="batchSave" parameterType="java.util.List">
+        INSERT INTO oms_order_after_sale_item (
+        after_sale_id, order_item_id, spu_id, sku_id, sku_name, pic_url, quantity,
+        price, total_amount, reason, create_time, update_time
+        ) VALUES
+        <foreach collection="items" item="item" separator=",">
+            (
+            #{item.afterSaleId}, #{item.orderItemId}, #{item.spuId}, #{item.skuId},
+            #{item.skuName}, #{item.picUrl}, #{item.quantity},
+            #{item.price}, #{item.totalAmount}, #{item.reason}, now(), now()
+            )
+        </foreach>
+    </insert>
+
+</mapper>

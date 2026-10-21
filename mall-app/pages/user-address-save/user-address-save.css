@@ -1,0 +1,97 @@
+.form-container .form-gorup .form-gorup-title {
+    flex-shrink: 0;
+    font-weight: 500;
+    white-space: nowrap;
+    padding-right: 24rpx;
+}
+
+.address-textarea {
+    height: auto !important;
+    min-height: 70rpx;
+    margin-top: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.form-group-tips-must {
+    color: #FF6B6B;
+    margin-left: 2rpx;
+    display: inline;
+}
+
+.intelligent-identification {
+    transition-property: height;
+    transition-duration: .3s;
+    will-change: height;
+}
+
+.intelligent-identification .btn {
+    width: 96rpx;
+    height: 44rpx;
+    line-height: 44rpx;
+}
+
+/* 别名 */
+.alias-title {
+    width: 100rpx;
+}
+
+.alias-btn {
+    width: 120rpx;
+    height: 48rpx;
+    line-height: 48rpx;
+    border-radius: 13px;
+    text-align: center;
+    margin-right: 24rpx;
+}
+
+.alias-add .input-alias {
+    height: 48rpx;
+    line-height: 48rpx;
+    width: 100% !important;
+    border-radius: 50rpx !important;
+    padding-left: 24rpx;
+    padding-right: 105rpx;
+}
+
+.alias-add .btn {
+    height: 48rpx !important;
+    min-height: 48rpx !important;
+    line-height: 48rpx !important;
+    top: 0;
+    right: 0;
+    border-radius: 50rpx !important;
+    padding: 0 !important;
+    width: 100rpx !important;
+}
+
+.alias-edit .btn {
+    margin: 0;
+    height: 48rpx !important;
+    min-height: 48rpx !important;
+    line-height: 48rpx !important;
+    padding: 0 24rpx;
+}
+
+.alias-edit .btn:first-child {
+    border-top-left-radius: 50rpx;
+    border-bottom-left-radius: 50rpx;
+}
+
+.alias-edit .btn:last-child {
+    border-top-right-radius: 50rpx;
+    border-bottom-right-radius: 50rpx;
+}
+
+.default-title {
+    width: 200rpx !important;
+}
+
+.label-edit-right {
+    padding-right: 130rpx;
+}
+
+.bottom-line-exclude .btn {
+    height: 88rpx;
+    line-height: 88rpx;
+}

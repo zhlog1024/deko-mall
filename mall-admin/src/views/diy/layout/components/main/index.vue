@@ -1,0 +1,653 @@
+<template>
+    <div class="app-main-container">
+    <!-- 左侧模块 -->
+    <div class="siderbar flex-col">
+        <el-collapse v-model="activeNames">
+            <template v-for="(com, i) in components">
+                <el-collapse-item v-if="com.data.length > 0" :key="i" :title="com.name" :name="com.key">
+                    <VueDraggable v-model="com.data" :animation="400" ghost-class="ghost" handle=".is-drag" :group="{ name: 'people', pull: 'clone', put: false }" class="component flex-row flex-wrap" :clone="clone_item_com_data" :sort="false" :force-fallback="true">
+                        <template v-for="item in com.data" :key="item.key">
+                            <el-tooltip effect="dark" :show-after="200" :hide-after="200" content="该组件只可以点击添加, 并且只能添加一次" raw-content placement="top" :disabled="!['tabs', 'tabs-carousel', 'tabs-magic'].includes(item.key)">
+                                <div :class="['item', { 'is-drag': !['tabs', 'tabs-carousel', 'tabs-magic'].includes(item.key) }]" @click.stop="draggable_click(item)">
+                                    <div class="main-border siderbar-hidden main-show tc">释放鼠标将组件添加到此处</div>
+                                    <div class="siderbar-show main-hidden flex-col jc-c align-c gap-4">
+                                        <img class="img radius-xs" :src="url_computer(item.key)" />
+                                        <div>{{ item.name }}</div>
+                                    </div>
+                                </div>
+                            </el-tooltip>
+                        </template>
+                    </VueDraggable>
+                </el-collapse-item>
+            </template>
+        </el-collapse>
+    </div>
+    <div class="drawer-container" :style="`width: ${drawer_selected ? '16rem' : '0px'}`">
+        <div class="drawer-content" :style="{ left: drawer_selected ? '0' : '-100%' }">
+            <div class="drawer-title" :style="{ opacity: drawer_selected ? '1' : '0' }">已选组件({{ diy_data.length }})</div>
+            <div ref="left_scrollTop" class="drawer-drag-area">
+                <div v-for="(item, index) in tabs_data" :key="index" :class="['flex align-c drawer-drag', { 'drawer-drag-bg': item.show_tabs == '1' }]" @click="set_tabs_event(true)">
+                    <i class="iconfont icon-jinzhi size-16 cr-d flex-shrink-0"></i>
+                    <el-tooltip effect="dark" :show-after="200" :hide-after="200" :content="`<span>开始时间: ${ !isEmpty(new_date_value(item)) ? new_date_value(item)[0] : '' }</span><br/><span>结束时间: ${ !isEmpty(new_date_value(item)[1]) ? new_date_value(item)[1] : '' }</span>`" raw-content placement="top" :disabled="isEmpty(new_date_value(item))">
+                        <span class="size-12 cr-6 flex-1 text-ellipsis">
+                                {{ item.name }}
+                                <div v-if="!isEmpty(new_date_value(item))" class="plug-in-name-tips"></div>
+                        </span>
+                    </el-tooltip>
+                    <i v-if="item.show_tabs == '1'" class="iconfont icon-close-round-o size-16 flex-shrink-0" @click.stop="del(index, true)"></i>
+                </div>
+                <VueDraggable v-model="diy_data" :animation="400" target=".sort-target" :scroll="true" :on-sort="on_sort">
+                    <TransitionGroup type="transition" tag="ul" name="fade" class="sort-target flex-col">
+                        <li v-for="(item, index) in diy_data" :key="index" :class="['flex align-c drawer-drag', { 'drawer-drag-bg': item.show_tabs == '1' }]" @click="on_choose(index, item.show_tabs)">
+                            <i class="iconfont icon-drag-dot size-16 cr-d flex-shrink-0"></i>
+                            <el-tooltip effect="dark" :show-after="200" :hide-after="200" :content="`<span>开始时间: ${ !isEmpty(new_date_value(item)) ? new_date_value(item)[0] : '' }</span><br/><span>结束时间: ${ !isEmpty(new_date_value(item)[1]) ? new_date_value(item)[1] : '' }</span>`" raw-content placement="top" :disabled="isEmpty(new_date_value(item))">
+                                <span class="size-12 cr-6 flex-1 text-ellipsis">
+                                        {{ item.name }}
+                                        <div v-if="!isEmpty(item.mark_name)" class="plug-drawer-mark-name mark-name-style">{{ item.mark_name }}</div>
+                                </span>
+                            </el-tooltip>
+                            <i v-if="item.show_tabs == '1'" class="iconfont icon-close-round-o size-16 flex-shrink-0" @click.stop="del(index, false)"></i>
+                        </li>
+                    </TransitionGroup>
+                </VueDraggable>
+            </div>
+        </div>
+    </div>
+    <!-- 视图渲染 -->
+    <div class="main re">
+        <div v-if="diy_data.length > 0 || tabs_data.length > 0" :class="['layout-toggle-bar', drawer_selected ? 'layout-toggle-bar-close' : 'layout-toggle-bar-open']" @click="toggle_drawer">
+            <div class="layout-toggle-bar-top"></div>
+            <div class="layout-toggle-bar-bottom"></div>
+        </div>
+        <div class="model">
+            <div class="model-content">
+                <div class="acticons">
+                    <el-button size="large" @click="clear_click">清空</el-button>
+                </div>
+                <!-- 拖拽区 -->
+                <div ref="scrollTop" class="model-drag" @scroll="on_scroll_event">
+                    <div class="page-bg h" :style="content_style">
+                        <div class="page-bg-img h" :style="content_img_style"></div>
+                    </div>
+                    <!-- 页面设置 -->
+                    <page-settings :show-page="page_data.show_tabs == '1'" :page-data="page_data" :scoll-top="scoll_top" @page_settings="page_settings"></page-settings>
+                    <div class="model-wall" :style="`margin-top: ${top_margin}px;`">
+                        <div class="model-wall-content" :style="`padding-top:${top_padding}px;padding-bottom:${bottom_navigation_show ? footer_nav_counter_store.padding_footer : 0}px;`">
+                            <div-content :diy-data="tabs_data" :show-model-border="show_model_border" :is-tabs="true" :main-content-style="main_content_style" :outer-container-padding="outer_container_padding" @on_choose="set_tabs_event(true)" @del="del"></div-content>
+                            <div v-if="tabs_data.length > 0" class="seat"></div>
+                            <template v-if="(tabs_data.length > 0 && tabs_data[0].com_data.content.tabs_active_index == 0) || (tabs_data.length == 0)">
+                                <VueDraggable v-model="diy_data" :animation="500" :touch-start-threshold="2" group="people" class="drag-area re" ghost-class="ghost" :on-sort="on_sort" :on-start="on_start" :on-end="on_end">
+                                    <div-content :diy-data="diy_data" :show-model-border="show_model_border" :main-content-style="main_content_style" :outer-container-padding="outer_container_padding" @on_choose="on_choose" @del="del" @copy="copy" @move-up="moveUp" @move-down="moveDown"></div-content>
+                                </VueDraggable>
+                            </template>
+                            <template v-else>
+                                <div v-if="tabs_data.length > 0" class="tabs-list-content w h flex-col align-c jc-c gap-10">
+                                    <div class="size-16">{{ tabs_data_name.data_type == '0' ? 'DIY页面' : '商品分类' }}
+                                        <template v-if="tabs_data_name.data_type == '0' && !isEmpty(tabs_data_name.micro_page_list)">
+                                            <span class="size-16">({{ tabs_data_name.micro_page_list.name }})</span>
+                                        </template>
+                                        <template v-else-if="tabs_data_name.data_type == '1' && !isEmpty(tabs_data_name.classify)">
+                                            <span class="size-16">({{ tabs_data_name.classify.name }})</span>
+                                        </template>
+                                        <template v-else>
+                                            <span class="size-16 cr-6">(未选择)</span>
+                                        </template>
+                                    </div>
+                                    <div class="size-12 cr-6 re">请在预览里边查看实际效果</div>
+                                    <div class="size-12 mt-20 col-price-style">选项卡切换到非（第一个）下不支持左侧组件拖入</div>
+                                    <el-button class="mt-10" type="primary" @click="tabs_content_click">切换至选项卡（第一个）</el-button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- <div class="seat"></div> -->
+                </div>
+                <!-- 底部区域 -->
+                <div v-if="bottom_navigation_show" class="model-bottom">
+                    <footer-nav :show-footer="footer_nav.show_tabs == '1'" :footer-data="footer_nav.com_data" @footer-nav="footer_nav_event"></footer-nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</template>
+<script setup lang="ts">
+import { background_computer, get_math, gradient_computer } from '../../../utils';
+import { cloneDeep, isEmpty } from 'lodash';
+import { getCurrentInstance, computed, ref, watch, onMounted, nextTick } from 'vue';
+import { SortableEvent, VueDraggable } from 'vue-draggable-plus';
+import defaultSettings from './index';
+import { footerNavCounterStore, commonStore } from '../../../store';
+const footer_nav_counter_store = footerNavCounterStore();
+const common_store = commonStore();
+const app = getCurrentInstance();
+const props = defineProps({
+    diyData: {
+        type: Array<any>,
+        default: () => [],
+    },
+    tabsData: {
+        type: Array<any>,
+        default: () => [],
+    },
+    footer: {
+        type: Object,
+        default: () => {},
+    },
+    header: {
+        type: Object,
+        default: () => {},
+    },
+    onRightUpdate: {
+        type: Function,
+        default: null,
+    },
+});
+
+// 获取tabs数据
+const tabs_data_name = computed(() => {
+    const data = tabs_data.value;
+    if (data.length > 0) {
+        const tabs_active_index = data[0].com_data.content.tabs_active_index;
+        const tabs_list = data[0].com_data.content.tabs_list;
+        return tabs_list[tabs_active_index - 1];
+    }
+    return '';
+});
+// 切换至首页显示
+const tabs_content_click = () => {
+    if (tabs_data.value.length > 0) {
+        tabs_data.value[0].com_data.content.tabs_active_index = 0;
+    }
+}
+// 时间处理
+const new_date_value = computed(() => {
+    return (item: any) => {
+        return item.com_data?.content?.content_top?.time_value || [];
+    }
+});
+
+const diy_data = ref(props.diyData);
+const tabs_data = ref(props.tabsData);
+const page_data = ref(props.header);
+const footer_nav = ref(props.footer);
+// 监听
+watch(
+    () => props.diyData,
+    (newValue) => {
+        diy_data.value = newValue;
+    }
+);
+watch(
+    () => props.tabsData,
+    (newValue) => {
+        tabs_data.value = newValue;
+    }
+);
+// 监听
+watch(
+    () => props.header,
+    (newValue) => {
+        page_data.value = newValue;
+        page_settings();
+    }
+);
+
+watch(
+    () => props.footer,
+    (newValue) => {
+        footer_nav.value = newValue;
+    },
+    { deep: true }
+);
+const top_padding = ref(90);
+const top_margin = ref(0);
+const content_style = ref('');
+const content_img_style = ref('');
+const main_content_style = ref('');
+const outer_container_padding = ref(0);
+const bottom_navigation_show = ref(true);
+// 更新数据第一个的安全距离
+const set_padding_top_value = () => {
+    if (tabs_data.value.length > 0) {
+        tabs_data.value.forEach((item: any) => {
+            item.com_data.style.common_style.padding_top_safe_value = common_store.header_height;
+        });
+        // 处理另外一个数组的时候，将所有的padding_top_safe_value设置为0
+        diy_data.value.forEach((item: any) => {
+            if (item.key !== 'float-window') {
+                item.com_data.style.common_style.padding_top_safe_value = 0;
+            }
+        });
+    } else if (diy_data.value.length > 0) {
+        // 处理另外一个数组的时候，将所有的padding_top_safe_value设置为0
+        tabs_data.value.forEach((item: any) => {
+            item.com_data.style.common_style.padding_top_safe_value = 0;
+        });
+        // 初始数据为0
+        let padding_top_index = 0;
+        // 如果前几个为悬浮按钮，则加一，找到不是悬浮按钮的第一个处理
+        diy_data.value.forEach((item: any, index: number) => {
+            if (index === padding_top_index && item.key === 'float-window') {
+                padding_top_index = index + 1;
+            } else {
+                if (index === padding_top_index && item.key !== 'float-window') {
+                    item.com_data.style.common_style.padding_top_safe_value = common_store.header_height;
+                } else if (item.key !== 'float-window') {
+                    item.com_data.style.common_style.padding_top_safe_value = 0;
+                }
+            }
+        });
+    }
+};
+
+watchEffect(() => {
+    const data = page_data.value.com_data;
+    if (data) {
+        // 底部按钮显示
+        const content = data.content;
+        bottom_navigation_show.value = content.bottom_navigation_show == '1' ? true : false;
+        // 通用样式设置
+        const new_style = data.style;
+        content_style.value = gradient_computer(new_style.common_style);
+        content_img_style.value = background_computer(new_style.common_style);
+        const { padding_top = 0, padding_left = 0, padding_right = 0, padding_bottom = 0 } = new_style.common_style;
+        // 外容器的左右间距
+        main_content_style.value = `padding: 0px ${ padding_right }px 0px ${ padding_left }px;`;
+        // 外容器的左右间距总数
+        outer_container_padding.value = padding_right + padding_right;
+
+        const { immersive_style, up_slide_display, data_alone_row_space, general_safe_distance_value } = new_style;
+        // 不开启沉浸式 和 上滑显示
+        if (immersive_style == '1' || up_slide_display != '1') {
+            top_padding.value = 0;
+        } else if (content.data_alone_row_value.length > 0) {
+            top_padding.value = 90 + 32 + data_alone_row_space;
+        } else {
+            top_padding.value = 90;
+        }
+        // 开启沉浸式并且没有开通上滑显示
+        if (immersive_style == '1' && up_slide_display != '1') {
+            if (content.data_alone_row_value.length > 0) {
+                top_margin.value = -90 - 32 - data_alone_row_space;
+            } else {
+                top_margin.value = -90;
+            }
+        } else {
+            top_margin.value = 0;
+        }
+        // 开始沉浸式并且开启安全距离
+        if (immersive_style == '1' && general_safe_distance_value == '1') {
+            if (content.data_alone_row_value.length > 0) {
+                common_store.set_header_height(90 + 32 + data_alone_row_space);
+            } else {
+                common_store.set_header_height(90);
+            }
+        } else {
+            // 没有开沉浸模式或者没有开启安全距离
+            common_store.set_header_height(0);
+        }
+        set_padding_top_value();
+    }
+});
+
+// 已选组件逻辑处理
+const drawer_selected = ref(false);
+const is_show_drawer = ref(true);
+watchEffect(() => {
+    if ((diy_data.value.length > 0 || tabs_data.value.length > 0) && is_show_drawer.value) {
+        drawer_selected.value = true;
+    } else {
+        drawer_selected.value = false;
+    }
+});
+const toggle_drawer = () => {
+    is_show_drawer.value = !is_show_drawer.value;
+    drawer_selected.value = !drawer_selected.value;
+};
+
+// 父组件调用的方法
+const emits = defineEmits(['rightUpdate', 'clear']);
+const activeNames = reactive(['base', 'plugins', 'tool']);
+interface componentsData {
+    name: string;
+    key: string;
+    data: componentsData[];
+}
+const components = ref<componentsData[]>([]);
+const url_computer = (name: string) => {
+    const new_url = `/static/diy/images/layout/siderbar/${name}.png`;
+    return new_url;
+};
+
+//#region 拖拽组件的公共方法
+// 是否显示提示用户拖拽位置
+const show_model_border = ref(true);
+// 点击添加tabs组件
+const draggable_click = (item: componentsData) => {
+    const type_data = ['tabs', 'tabs-carousel', 'tabs-magic'];
+    if (type_data.includes(item.key)) {
+        // if (common_store.is_immersion_model) {
+        //     ElMessage.error('开启沉浸样式下不可以添加该组件');
+        //     return;
+        // }
+        if (isEmpty(tabs_data.value)) {
+            // 添加tabs组件
+            tabs_data.value.push({
+                name: item.name,
+                mark_name: '',
+                show_tabs: '1',
+                is_enable: '1',
+                src: '',
+                id: get_math(),
+                key: item.key,
+                com_data: cloneDeep((defaultSettings as any)[item.key.replace(/-/g, '_')]),
+            });
+            // common_store.set_is_have_tabs(true);
+            set_tabs_event(true);
+        } else if (!isEmpty(tabs_data.value)) {
+            if (tabs_data.value[0].key == item.key) {
+                ElMessage.error('该组件只可以添加一次');
+            } else if (tabs_data.value[0].key != item.key) {
+                ElMessage.error('(选项卡, 选项卡轮播, 选项卡魔方)不能同时存在');
+            }
+        }
+    }
+};
+// 复制
+const clone_item_com_data = (item: commonComponentData) => {
+    return {
+        name: item.name,
+        mark_name: '',
+        show_tabs: '1',
+        is_enable: '1',
+        src: item.src,
+        id: get_math(),
+        key: item.key,
+        com_data: cloneDeep((defaultSettings as any)[item.key.replace(/-/g, '_')]),
+    };
+};
+
+// 任何行动都会触发
+const on_sort = (item: SortableEvent) => {
+    let index = item?.newIndex || 0;
+    // 设置对应的位置为显示
+    set_show_tabs(index);
+    // 操作的时候更新一下数据的安全距离
+    set_padding_top_value();
+};
+// 开始拖拽时
+const on_start = () => {
+    show_model_border.value = false;
+};
+// 拖拽结束时
+const on_end = () => {
+    show_model_border.value = true;
+};
+//#endregion
+
+// 设置复制 删除 移动几个按钮的显示位置，
+// 选中时候的效果
+const on_choose = (index: number, show_tabs: string) => {
+    // 如果已经选中了, 设置为不可再次触发事件
+    if (show_tabs != '1') {
+        // 设置对应的位置为显示
+        set_show_tabs(index);
+    }
+};
+// 复制
+const copy = (index: number) => {
+    // 获取当前数据, 复制的时候id更换一下
+    const new_data = {
+        ...cloneDeep(get_diy_index_data(index)),
+        id: get_math(),
+    };
+    // 在当前位置下插入数据
+    diy_data.value.splice(index, 0, new_data);
+    set_show_tabs(index + 1);
+};
+// 删除
+const del = (index: number, is_tabs: boolean) => {
+    app?.appContext.config.globalProperties.$common.message_box('删除后不可恢复，确定继续吗?', 'warning').then(() => {
+        // 如果是选项卡被删除，则删除tabs组件，并判断是否有拖拽内容，有的选中第一个，没有的时候，默认选中页面设置
+        if (is_tabs) {
+            tabs_data.value.splice(0, 1);
+            if (diy_data.value.length > 0) {
+                set_show_tabs(0);
+            } else {
+                page_settings();
+            }
+            return;
+        } else {
+            const show_tabs_index = diy_data.value.findIndex((item: any) => item.show_tabs == '1');
+            // 删除的是当前的这个数据
+            if (show_tabs_index == index) {
+                diy_data.value.splice(index, 1);
+                if (diy_data.value.length > 0) {
+                    let new_index: number = index;
+                    // 删除的时候如果大于0，则显示上边的数据
+                    if (index > 0) {
+                        new_index = new_index - 1;
+                    }
+                    set_show_tabs(new_index);
+                } else if (tabs_data.value.length > 0) {
+                    // 拖拽数据不存在时，选中tabs组件
+                    set_tabs_event(true);
+                } else {
+                    page_settings();
+                }
+            } else {
+                diy_data.value.splice(index, 1);
+            }
+        }
+        // 操作的时候更新一下数据的安全距离
+        set_padding_top_value();
+    });
+};
+// 向上移动
+const moveUp = (index: number, flag: boolean) => {
+    if (flag) {
+        const old_data = get_diy_index_data(index);
+        // 截取前半部分信息, 并反转一下，从最后边往前查询
+        const new_list = diy_data.value.slice(0, index).reverse();
+        const count = float_count(new_list);
+        // 删除当前位置信息
+        diy_data.value.splice(index, 1);
+        // 将数据插入上一层数据中
+        diy_data.value.splice(index - count, 0, old_data);
+        // 设置对应的位置为显示
+        set_show_tabs(index - count);
+        // 操作的时候更新一下数据的安全距离
+        set_padding_top_value();
+    }
+};
+// 向下移动
+const moveDown = (index: number, flag: boolean) => {
+    if (flag) {
+        const old_data = get_diy_index_data(index);
+        // 截取后半部分信息, 舍弃自身的信息
+        const new_list = diy_data.value.slice(index + 1, diy_data.value.length);
+        const count = float_count(new_list);
+        // 删除当前位置信息
+        diy_data.value.splice(index, 1);
+        // 将数据插入下一层数据中
+        diy_data.value.splice(index + count, 0, old_data);
+        set_show_tabs(index + count);
+        // 操作的时候更新一下数据的安全距离
+        set_padding_top_value();
+    }
+};
+
+const float_count = (new_list: any[]) => {
+    // 记录一下当前查询的是否是对应的信息
+    let key = '';
+    let conunt = 1;
+    new_list.forEach((item, index) => {
+        // 如果当前的key是悬浮按钮，并且历史的也是就加一，否则的话记录一下当前的key，避免多次循环
+        if (item.key == 'float-window' && isEmpty(key)) {
+            conunt += 1;
+        } else {
+            key = item.key;
+        }
+    });
+    return conunt;
+};
+// 获取当前传递过来的index对应的diy_data中的数据
+const get_diy_index_data = (index: number) => {
+    return (<arrayIndex>diy_data.value)[index.toString()];
+};
+// 设置当前选中的是那个
+const set_show_tabs = (index: number) => {
+    page_data.value.show_tabs = '0';
+    footer_nav.value.show_tabs = '0';
+    set_tabs_event(false);
+    diy_data.value.forEach((item, for_index) => {
+        // 先将全部的设置为false,再将当前选中的设置为true
+        item.show_tabs = '0';
+        if (for_index == index) {
+            emits('rightUpdate', item, diy_data.value, page_data.value, footer_nav.value, tabs_data.value);
+            item.show_tabs = '1';
+            // 悬浮按钮的时候不用滚动到指定位置
+            if (item.key != 'float-window') {
+                scroll();
+            }
+        }
+    });
+};
+// 中间区域的滚动效果
+const scrollTop = ref<HTMLElement | null>(null);
+const activeCard = ref<HTMLElement | null>(null);
+// 左边已选组件的滚动效果
+const left_scrollTop = ref<HTMLElement | null>(null);
+const left_activeCard = ref<HTMLElement | null>(null);
+// 滚动到指定位置
+const scroll = () => {
+    nextTick(() => {
+        // 获取当前选中的内容 --中间区域的滚动效果
+        activeCard.value = document.querySelector('.plug-in-table.plug-in-border');
+        if (activeCard.value) {
+            // 获取选中内容的位置
+            const scrollY = activeCard.value.offsetTop;
+            if (scrollTop.value) {
+                // 选中的滚动到指定位置
+                scrollTop.value.scrollTo({ top: scrollY - 100, behavior: 'smooth' });
+            }
+        }
+        // 左边已选组件的滚动效果
+        left_activeCard.value = document.querySelector('.drawer-drag-bg');
+        if (left_activeCard.value) {
+            // 获取选中内容的位置
+            const left_scrollY = left_activeCard.value.offsetTop;
+            if (left_scrollTop.value) {
+                // 选中的滚动到指定位置
+                left_scrollTop.value.scrollTo({ top: left_scrollY - 200, behavior: 'smooth' });
+            }
+        }
+    });
+};
+const scoll_top = ref(0);
+const on_scroll_event = (e: any) => {
+    scoll_top.value = e.target.scrollTop;
+};
+//#endregion
+//#region 页面设置
+// 在组件挂载时默认执行
+onMounted(async () => {
+    page_settings();
+    // 监听 module_list，初始化完成后一次性赋值给本地 components
+    watch(
+        () => common_store.common.module_list,
+        (list) => {
+            if (Array.isArray(list) && list.length > 0) {
+                components.value = list;
+            }
+        },
+        { immediate: true }
+    );
+});
+//页面设置
+const page_settings = () => {
+    console.log('page_settings called');
+    // 页面设置显示
+    page_data.value.show_tabs = '1';
+    footer_nav.value.show_tabs = '0';
+    set_tabs_event(false);
+    // 将拖拽的信息全部变为不选中
+    if (diy_data.value.length > 0) {
+        diy_data.value.forEach((item) => {
+            item.show_tabs = '0';
+        });
+    }
+    console.log('calling onRightUpdate callback');
+    if (props.onRightUpdate) {
+        props.onRightUpdate(page_data.value, diy_data.value, page_data.value, footer_nav.value, tabs_data.value);
+    } else {
+        console.log('no onRightUpdate callback, using emits');
+        emits('rightUpdate', page_data.value, diy_data.value, page_data.value, footer_nav.value, tabs_data.value);
+    }
+};
+const set_tabs_event = (choose: Boolean) => {
+    if (tabs_data.value.length > 0 && !choose) {
+        tabs_data.value[0].show_tabs = '0';
+    } else if (tabs_data.value.length > 0 && choose) {
+        tabs_data.value[0].show_tabs = '1';
+        page_data.value.show_tabs = '0';
+        footer_nav.value.show_tabs = '0';
+        // 将拖拽的信息全部变为不选中
+        if (diy_data.value.length > 0) {
+            diy_data.value.forEach((item) => {
+                item.show_tabs = '0';
+            });
+        }
+        emits('rightUpdate', tabs_data.value[0], diy_data.value, page_data.value, footer_nav.value, tabs_data.value);
+    }
+};
+// 清空列表
+const clear_click = () => {
+    app?.appContext.config.globalProperties.$common.message_box('清空后不可恢复，确定继续吗?', 'warning').then(() => {
+        emits('clear');
+    });
+};
+//#endregion
+
+//#region 底部导航
+//底部导航设置
+const footer_nav_event = () => {
+    // 页面设置显示
+    page_data.value.show_tabs = '0';
+    footer_nav.value.show_tabs = '1';
+    set_tabs_event(false);
+    // 将拖拽的信息全部变为不选中
+    if (diy_data.value.length > 0) {
+        diy_data.value.forEach((item) => {
+            item.show_tabs = '0';
+        });
+    }
+    emits('rightUpdate', footer_nav.value, diy_data.value, page_data.value, footer_nav.value, tabs_data.value);
+};
+//#endregion
+</script>
+
+<style lang="scss" scoped>
+@use 'index' as *;
+.drag-area {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1;
+}
+.plug-drawer-mark-name {
+    position: absolute;
+    top: -1.4rem;
+    left: -0.6rem;
+}
+// 列表
+.tabs-list-content {
+    z-index: 2;
+    height: 20rem;
+}
+.col-price-style {
+    color: red;
+}
+</style>

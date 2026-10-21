@@ -1,0 +1,335 @@
+<template>
+    <view :class="theme_view">
+        <component-popup :propShow="popup_status" propPosition="bottom" @onclose="popup_close_event">
+            <view class="share-popup bg-white">
+                <view class="close oh pa top-0 right-0 z-i-deep">
+                    <view class="fr padding-top padding-right padding-left-sm padding-bottom-sm" @tap.stop="popup_close_event">
+                        <iconfont name="icon-close-line" size="28rpx" color="#999"></iconfont>
+                    </view>
+                </view>
+                <view class="share-popup-content">
+                    <!-- #ifdef MP-ALIPAY -->
+                    <view class="share-items oh cp" @tap="share_base_event">
+                        <image class="image" :src="common_static_url + 'share-user-icon.png'" mode="scaleToFill"></image>
+                        <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.h04xiy') }}</text>
+                    </view>
+                    <!-- #endif -->
+                    <!-- #ifdef MP-WEIXIN || MP-BAIDU || MP-QQ || MP-TOUTIAO || MP-KUAISHOU -->
+                    <view class="share-items oh cp">
+                        <button v-if="type == 2" class="btn dis-block br-0 ht-auto" type="default" size="mini" hover-class="none" @tap="share_image_event">
+                            <image class="image" :src="common_static_url + 'share-user-icon.png'" mode="scaleToFill"></image>
+                            <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.h04xiy') }}</text>
+                        </button>
+                        <button v-else class="btn dis-block br-0 ht-auto" type="default" size="mini" open-type="share" hover-class="none" @tap="popup_close_event">
+                            <image class="image" :src="common_static_url + 'share-user-icon.png'" mode="scaleToFill"></image>
+                            <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.h04xiy') }}</text>
+                        </button>
+                    </view>
+                    <!-- #endif -->
+                    <!-- #ifdef APP -->
+                    <block v-if="is_app_weixin">
+                        <view class="share-items oh cp" data-scene="WXSceneSession" data-provider="weixin" @tap="share_app_event">
+                            <image class="image" :src="common_static_url + 'share-user-icon.png'" mode="scaleToFill"></image>
+                            <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.rhs2c5') }}</text>
+                        </view>
+                    </block>
+                    <!-- #endif -->
+                    <!-- #ifdef H5 -->
+                    <view class="share-items oh cp" @tap="share_url_copy_event">
+                        <image class="image" :src="common_static_url + 'share-url-icon.png'" mode="scaleToFill"></image>
+                        <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.1oh013') }}</text>
+                    </view>
+                    <!-- #endif -->
+                    <view v-if="is_goods_poster == 1 && (goods_id || 0) != 0" class="share-items oh cp" @tap="poster_event">
+                        <image class="image" :src="common_static_url + 'share-poster-icon.png'" mode="scaleToFill"></image>
+                        <text class="cr-grey text-size-xs single-text">{{ $t('share-popup.share-popup.dcp2qu') }}</text>
+                    </view>
+                </view>
+            </view>
+        </component-popup>
+
+        <!-- 用户基础 -->
+        <component-user-base ref="user_base"></component-user-base>
+    </view>
+</template>
+<script>
+    const app = getApp();
+    var common_static_url = app.globalData.get_static_url('common');
+    import componentPopup from '@/components/popup/popup';
+    import componentUserBase from '@/components/user-base/user-base';
+    export default {
+        data() {
+            return {
+                theme_view: app.globalData.get_theme_value_view(),
+                common_static_url: common_static_url,
+                popup_status: false,
+                type: null,
+                is_goods_poster: 0,
+                goods_id: 0,
+                url: null,
+                images: null,
+                title: null,
+                summary: null,
+                is_app_weixin: true,
+                is_app_qq: true,
+                share_info: {},
+            };
+        },
+
+        components: {
+            componentPopup,
+            componentUserBase,
+        },
+
+        created: function () {},
+
+        methods: {
+            // 初始配置
+            init(config = {}) {
+                console.log('[share-popup] init 调用, config:', JSON.stringify(config));
+                if (!app.globalData.is_single_page_check()) {
+                    console.log('[share-popup] is_single_page_check 返回 false，阻止弹窗');
+                    return false;
+                }
+                this.setData({
+                    popup_status: config.status == undefined ? true : config.status,
+                    type: config.type == undefined ? null : config.type,
+                    is_goods_poster: config.is_goods_poster || 0,
+                    goods_id: config.goods_id || 0,
+                    url: config.url || null,
+                    images: config.images || null,
+                    title: config.title || null,
+                    summary: config.summary || null,
+                    share_info: config.share_info || {}
+                });
+
+                // 用户头像和昵称设置提示
+                if ((this.$refs.user_base || null) != null) {
+                    this.$refs.user_base.init('share');
+                }
+
+                // #ifdef APP
+                // app分享通道隔离
+                uni.getProvider({
+                    service: 'share',
+                    success: (result) => {
+                        var provider = result.provider || [];
+                        this.setData({
+                            is_app_weixin: provider.indexOf('weixin') != -1,
+                            is_app_qq: provider.indexOf('qq') != -1,
+                        });
+                    },
+                    fail: (error) => {},
+                });
+                // #endif
+            },
+
+            // 弹层关闭
+            popup_close_event(e) {
+                this.setData({ popup_status: false });
+            },
+
+            // 分享图片（小程序端，需基础库 2.14.3+）
+            share_image_event() {
+                console.log('[share-popup] share_image_event 触发, images:', this.images);
+                this.setData({ popup_status: false });
+                var images = this.images;
+                console.log('[share-popup] 调用 showShareImageMenu, path:', images);
+
+                // 如果是远程 URL，先下载到本地临时文件（showShareImageMenu 只接受本地路径）
+                if (images && (images.indexOf('http://') === 0 || images.indexOf('https://') === 0)) {
+                    var self = this;
+                    uni.showLoading({ title: '准备中...' });
+                    uni.downloadFile({
+                        url: images,
+                        success: function(downloadRes) {
+                            uni.hideLoading();
+                            if (downloadRes.statusCode === 200) {
+                                console.log('[share-popup] 下载成功, 本地路径:', downloadRes.tempFilePath);
+                                self.doShowShareImageMenu(downloadRes.tempFilePath);
+                            } else {
+                                console.log('[share-popup] 下载失败, statusCode:', downloadRes.statusCode);
+                                self.previewFallback(images);
+                            }
+                        },
+                        fail: function(err) {
+                            uni.hideLoading();
+                            console.log('[share-popup] 下载失败:', err);
+                            self.previewFallback(images);
+                        }
+                    });
+                } else {
+                    this.doShowShareImageMenu(images);
+                }
+            },
+
+            // 执行 showShareImageMenu
+            doShowShareImageMenu(localPath) {
+                var self = this;
+                uni.showShareImageMenu({
+                    path: localPath,
+                    success: function(res) {
+                        console.log('[share-popup] showShareImageMenu 成功:', res);
+                    },
+                    fail: function(err) {
+                        console.log('[share-popup] showShareImageMenu 失败:', err);
+                        self.previewFallback(localPath);
+                    }
+                });
+            },
+
+            // 降级：预览图片（用户可长按保存/发送）
+            previewFallback(path) {
+                uni.previewImage({
+                    urls: [path],
+                    current: path,
+                });
+            },
+
+            // url链接地址复制分享
+            share_url_copy_event() {
+                var share = app.globalData.share_content_handle(this.share_info || {});
+                var url = share.url || app.globalData.get_page_url();
+                app.globalData.text_copy_event(url);
+            },
+
+            // 基础分享事件
+            share_base_event() {
+                this.setData({
+                    popup_status: false,
+                });
+                uni.pageScrollTo({
+                    scrollTop: 0,
+                    duration: 300,
+                    complete: (res) => {
+                        setTimeout(function () {
+                            uni.showShareMenu();
+                        }, 500);
+                    },
+                });
+            },
+
+            // 商品海报分享
+            poster_event() {
+                var token = uni.getStorageSync('token');
+                if (!token) {
+                    app.globalData.showToast('请先登录');
+                    return;
+                }
+                uni.showLoading({ title: '生成海报中...' });
+                var self = this;
+                uni.request({
+                    url: app.globalData.get_request_url('goodsposter', 'goods', 'poster'),
+                    method: 'POST',
+                    data: { goods_id: this.goods_id },
+                    dataType: 'json',
+                    header: {
+                        'Authorization': token
+                    },
+                    success: (res) => {
+                        uni.hideLoading();
+                        if (res.data.code === '00000') {
+                            uni.previewImage({
+                                current: res.data.data,
+                                urls: [res.data.data],
+                            });
+                        } else if (res.data.code === 'A0230') {
+                            app.globalData.remove_user_cache_event();
+                            uni.showToast({ title: '会话已过期，请重新登录' });
+                        } else {
+                            uni.showModal({ title: '提示', content: res.data.msg || '生成海报失败', showCancel: false });
+                        }
+                    },
+                    fail: () => {
+                        uni.hideLoading();
+                        app.globalData.showToast('网络异常，请稍后重试');
+                    },
+                });
+            },
+
+            // app分享
+            share_app_event(e) {
+                // 分享参数
+                var provider = e.currentTarget.dataset.provider;
+                var scene = e.currentTarget.dataset.scene || null;
+                // 分享基础数据
+                var share = app.globalData.share_content_handle(this.share_info || {});
+                var img = this.images || share.img;
+                var url = app.globalData.page_url_protocol((this.url || null) == null ? share.url : app.globalData.share_query_handle(this.url))
+                var title = this.title || share.title;
+                var summary = this.summary || share.desc;
+                var type = this.type === null ? ((img || null) == null ? 1 : 0) : this.type;
+                var mini_program = {};
+
+                // #ifdef APP
+                // 分享到好友，是否走微信小程序（仅未明确指定type时才自动转换）
+                if (scene == 'WXSceneSession' && this.type === null) {
+                    var weixin_original_id = app.globalData.get_config('common_app_mini_weixin_share_original_id') || null;
+                    if (weixin_original_id != null) {
+                        type = 5;
+                        mini_program = {
+                            id: weixin_original_id,
+                            path: url.split('#')[1],
+                            type: 0,
+                            webUrl: url,
+                        };
+                    }
+                }
+                // #endif
+
+                // 关闭分享弹窗
+                this.setData({
+                    popup_status: false,
+                });
+                // 调用分享组件
+                uni.share({
+                    provider: provider,
+                    scene: scene,
+                    type: type,
+                    href: url,
+                    title: title,
+                    summary: summary,
+                    imageUrl: img,
+                    miniProgram: mini_program,
+                    success: function (res) {},
+                    fail: function (err) {},
+                });
+            },
+        },
+    };
+</script>
+<style scoped>
+    .share-popup {
+        padding: 20rpx 10rpx 0 10rpx;
+        position: relative;
+    }
+    .share-popup-content {
+        padding: 0 20rpx;
+        text-align: left;
+    }
+    .share-popup-content .share-items {
+        padding: 30rpx 0;
+        min-height: 85rpx;
+        display: flex;
+    }
+    .share-popup-content .share-items:not(:first-child) {
+        border-top: 1px solid #f0f0f0;
+    }
+    .share-popup-content .share-items .btn {
+        background: transparent;
+        padding: 0;
+        width: 100%;
+        text-align: left;
+        margin: 0;
+    }
+    .share-popup-content .share-items .image {
+        width: 80rpx;
+        height: 80rpx;
+        vertical-align: middle;
+        margin-right: 20rpx;
+    }
+    .share-popup-content .share-items .single-text {
+        width: calc(100% - 100rpx);
+        line-height: 85rpx;
+    }
+</style>

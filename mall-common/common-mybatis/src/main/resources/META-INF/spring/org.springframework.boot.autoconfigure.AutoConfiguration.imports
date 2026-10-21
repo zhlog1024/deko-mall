@@ -1,0 +1,2 @@
+com.deko.mall.common.mybatis.config.MybatisPlusConfig
+com.deko.mall.common.mybatis.handler.MyMetaObjectHandler

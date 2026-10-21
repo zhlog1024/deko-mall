@@ -1,0 +1,5 @@
+# 订单相关配置
+mall:
+  order:
+    # 银豆抵扣比例（相对于商品金额的百分比，默认5%）
+    silver-bean-deduction-rate: 5

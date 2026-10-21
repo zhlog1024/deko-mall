@@ -1,0 +1,34 @@
+# 共享配置（所有服务共用）
+# 由 docker-compose 注入环境变量；此处全部使用 ${VAR:default} 占位，不含真实凭据。
+
+redis:
+  database: 0
+  host: ${REDIS_HOST:redis}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:deko_redis_2024}
+
+mysql:
+  host: ${MYSQL_HOST:mysql}
+  port: ${MYSQL_PORT:3306}
+  username: ${MYSQL_USERNAME:root}
+  password: ${MYSQL_PASSWORD:deko_root_2024}
+
+rabbitmq:
+  host: ${RABBITMQ_HOST:rabbitmq}
+  port: ${RABBITMQ_PORT:5672}
+  username: ${RABBITMQ_USERNAME:deko}
+  password: ${RABBITMQ_PASSWORD:deko_mq_2024}
+
+# 验签公钥地址
+spring:
+  security:
+    oauth2:
+      authorizationserver:
+        token-uri: ${gateway.endpoint}/mall-auth/oauth2/token
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:${gateway.endpoint}/mall-auth/oauth2/jwks}
+
+# 网关地址（浏览器可访问的地址）
+gateway:
+  endpoint: ${GATEWAY_ENDPOINT:http://localhost:9999}

@@ -1,0 +1,17 @@
+package com.deko.mall.sms.service.impl;
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.deko.mall.sms.mapper.CouponSpuCategoryMapper;
+import com.deko.mall.sms.model.entity.SmsCouponSpuCategory;
+import com.deko.mall.sms.service.CouponSpuCategoryService;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CouponSpuCategoryServiceImpl extends ServiceImpl<CouponSpuCategoryMapper, SmsCouponSpuCategory>
+        implements CouponSpuCategoryService {
+
+}
+
+
+
+

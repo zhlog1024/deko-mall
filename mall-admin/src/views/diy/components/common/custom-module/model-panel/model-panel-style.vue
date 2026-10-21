@@ -1,0 +1,282 @@
+<template>
+  <div class="w h bg-f">
+    <el-form :model="form" label-width="70">
+      <custom-location
+        v-model="diy_data.location"
+        v-model:follow="form.data_follow"
+        :is-follow="!followName.includes(diy_data.id)"
+        :component-options="componentOptions"
+        @operation_end="operation_end"
+      ></custom-location>
+      <div class="bg-f5 divider-line" />
+      <card-container>
+        <div class="mb-12">容器设置</div>
+        <el-form-item label="链接">
+          <url-value
+            v-model="form.link"
+            @update:model-value="img_link_change('1')"
+          ></url-value>
+        </el-form-item>
+        <el-form-item label="数据链接">
+          <el-select
+            v-model="form.data_source_link_field.id"
+            value-key="id"
+            clearable
+            filterable
+            placeholder="请选择数据链接字段"
+            size="default"
+            class="flex-1"
+            @change="img_link_change('2')"
+          >
+            <el-option
+              v-for="item in options.filter((item) => item.type == 'link')"
+              :key="item.field"
+              :label="item.name"
+              :value="item.field"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="背景颜色">
+          <background-common
+            v-model:color_list="form.color_list"
+            v-model:direction="form.direction"
+            v-model:img_style="form.background_img_style"
+            v-model:img="form.background_img"
+            @mult_color_picker_event="mult_color_picker_event"
+            @operation_end="operation_end"
+          />
+        </el-form-item>
+        <el-form-item label="圆角">
+          <radius
+            :value="form.bg_radius"
+            @operation_end="operation_end"
+          ></radius>
+        </el-form-item>
+        <el-form-item label="旋转角度">
+          <slider
+            v-model="form.panel_rotate"
+            :max="1000"
+            @operation_end="operation_end"
+          ></slider>
+        </el-form-item>
+        <!-- <el-form-item label="是否置底">
+                    <el-switch v-model="form.bottom_up" active-value="1" inactive-value="0" />
+                </el-form-item> -->
+        <el-form-item label="容器宽度">
+          <slider
+            v-model="form.com_width"
+            :max="1000"
+            @operation_end="container_size_change"
+          ></slider>
+        </el-form-item>
+        <el-form-item label="容器高度">
+          <slider
+            v-model="form.com_height"
+            :max="1000"
+            @operation_end="container_size_change"
+          ></slider>
+        </el-form-item>
+      </card-container>
+      <div class="bg-f5 divider-line" />
+      <condition-config
+        :value="form"
+        :options="options"
+        @operation_end="operation_end"
+      ></condition-config>
+      <div class="bg-f5 divider-line" />
+      <animation-config
+        v-model:type="form.animation_style.type"
+        v-model:number="form.animation_style.number"
+        @operation_end="operation_end"
+      ></animation-config>
+      <div class="bg-f5 divider-line" />
+      <card-container>
+        <div class="mb-12">边框设置</div>
+        <el-form-item label="边框显示">
+          <el-switch
+            v-model="form.border_show"
+            active-value="1"
+            inactive-value="0"
+            @change="operation_end"
+          />
+        </el-form-item>
+        <template v-if="form.border_show == '1'">
+          <el-form-item label="边框颜色">
+            <color-picker
+              v-model="form.border_color"
+              default-color="#FF3F3F"
+              @operation_end="operation_end"
+            ></color-picker>
+          </el-form-item>
+          <el-form-item label="边框样式">
+            <el-radio-group v-model="form.border_style" @change="operation_end">
+              <el-radio value="dashed">
+                <div
+                  class="border-style-item"
+                  style="border: 1px dashed #979797"
+                ></div>
+              </el-radio>
+              <el-radio value="solid">
+                <div
+                  class="border-style-item"
+                  style="border: 1px solid #979797"
+                ></div>
+              </el-radio>
+              <el-radio value="dotted">
+                <div
+                  class="border-style-item"
+                  style="border: 1px dotted #979797"
+                ></div>
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="边框粗细">
+            <slider
+              v-model="form.border_size"
+              :max="100"
+              @operation_end="container_size_change"
+            ></slider>
+          </el-form-item>
+        </template>
+      </card-container>
+    </el-form>
+  </div>
+</template>
+<script setup lang="ts">
+import {
+  get_container_location,
+  get_data_fields,
+  get_history_name,
+  location_compute,
+} from "../../../../utils";
+import { isEmpty } from "lodash";
+const props = defineProps({
+  value: {
+    type: Object,
+    default: () => ({}),
+  },
+  options: {
+    type: Array<any>,
+    default: () => [],
+  },
+  componentOptions: {
+    type: Array<any>,
+    default: () => [],
+  },
+  followName: {
+    type: Array<string>,
+    default: [],
+  },
+});
+// 默认值
+const state = reactive({
+  diy_data: props.value,
+});
+// 如果需要解构，确保使用toRefs
+const { diy_data } = toRefs(state);
+const form = ref(diy_data.value.com_data);
+
+const center_height = defineModel("height", { type: Number, default: 0 });
+
+const mult_color_picker_event = (arry: color_list[], type: number) => {
+  form.value.color_list = arry;
+  form.value.direction = type.toString();
+};
+
+// 数据链接字段切换时，更新另外一个数据
+const img_link_change = (key: string) => {
+  if (key == "2") {
+    form.value.link = {};
+    form.value.data_source_link_field = get_data_fields(
+      props.options,
+      "link",
+      form.value.data_source_link_field.id
+    );
+  } else {
+    form.value.data_source_link_field = get_data_fields([], "link", "");
+  }
+  operation_end();
+};
+const emit = defineEmits(["operation_end"]);
+const operation_end = () => {
+  emit("operation_end", get_history_name(diy_data.value));
+};
+// #region 位置计算
+// 监听数据变化
+const size_location_change = (location: {
+  x: number;
+  y: number;
+  record_x: number;
+  record_y: number;
+  staging_y: number;
+}) => {
+  diy_data.value.location.x = location_compute(
+    form.value.com_width,
+    location.x,
+    390
+  );
+  diy_data.value.location.y = location_compute(
+    form.value.com_height,
+    location.y,
+    center_height.value
+  );
+  diy_data.value.location.record_x = location_compute(
+    form.value.com_width,
+    location.record_x,
+    390
+  );
+  diy_data.value.location.record_y = location_compute(
+    form.value.com_height,
+    location.record_y,
+    center_height.value
+  );
+  diy_data.value.location.staging_y = location_compute(
+    form.value.com_height,
+    location.staging_y,
+    center_height.value
+  );
+  form.value.staging_height = form.value.com_height;
+};
+// 组件大小变化触发事件
+const container_size_change = () => {
+  const { spacing = 0, type = "left", id = "" } = form.value.data_follow;
+  if (id != "") {
+    // 获取新的位置
+    const { x: new_x, y: new_y } = get_container_location(
+      props.componentOptions,
+      id,
+      type,
+      spacing,
+      diy_data.value.location.x,
+      diy_data.value.location.y
+    );
+    // 重新更新位置信息
+    diy_data.value.location = {
+      x: new_x,
+      y: new_y,
+      record_x: new_x,
+      record_y: new_y,
+      staging_y: new_y,
+    };
+    size_location_change(diy_data.value.location);
+  }
+  operation_end();
+};
+// 监听数据变化
+watch(
+  () => diy_data.value,
+  (val) => {
+    size_location_change(val.location);
+  },
+  { immediate: true, deep: true }
+);
+// #endregion
+</script>
+<style lang="scss" scoped>
+@use "../../../../styles/variables" as *;
+
+.border-style-item {
+  width: 3rem;
+  height: 2rem;
+}
+</style>

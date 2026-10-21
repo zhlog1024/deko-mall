@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.oms.mapper.OrderAfterSaleMapper">
+
+    <!-- 基础查询条件（复用：分页列表 / 统计 / 导出） -->
+    <sql id="baseWhere">
+        <where>
+            <if test="queryParams.memberId != null">
+                AND a.member_id = #{queryParams.memberId}
+            </if>
+            <if test="queryParams.status != null and queryParams.status != ''">
+                <choose>
+                    <when test='queryParams.status.contains(",")'>
+                        AND FIND_IN_SET(a.status, #{queryParams.status})
+                    </when>
+                    <otherwise>
+                        AND a.status = #{queryParams.status}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="queryParams.afterSaleType != null">
+                AND a.after_sale_type = #{queryParams.afterSaleType}
+            </if>
+            <if test="queryParams.keywords != null and queryParams.keywords != ''">
+                AND (a.after_sale_no LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR a.order_no LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                OR EXISTS (
+                    SELECT 1 FROM oms_order_after_sale_item ai
+                    WHERE ai.after_sale_id = a.id
+                      AND ai.sku_name LIKE CONCAT('%', #{queryParams.keywords}, '%')
+                ))
+            </if>
+            <if test="queryParams.beginDate != null and queryParams.beginDate != ''">
+                AND a.create_time &gt;= #{queryParams.beginDate}
+            </if>
+            <if test="queryParams.endDate != null and queryParams.endDate != ''">
+                AND a.create_time &lt; DATE_ADD(#{queryParams.endDate}, INTERVAL 1 DAY)
+            </if>
+            <if test="queryParams.supplierId != null">
+                AND a.supplier_id = #{queryParams.supplierId}
+            </if>
+            AND a.deleted = 0
+        </where>
+    </sql>
+
+    <!-- 售后分页列表（APP端 / 管理后台共用） -->
+    <select id="selectPageByQuery" resultType="com.deko.mall.oms.model.entity.order.OmsOrderAfterSale">
+        SELECT * FROM oms_order_after_sale a
+        <include refid="baseWhere"/>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 查询售后单导出数据列表 -->
+    <select id="selectAfterSaleExportList" resultType="com.deko.mall.oms.model.vo.AfterSaleExportVO">
+        SELECT
+        a.after_sale_no AS afterSaleNo,
+        a.order_no AS orderNo,
+        a.member_id AS memberId,
+        a.status,
+        CASE a.status
+        WHEN 1 THEN '待审核'
+        WHEN 2 THEN '已拒绝'
+        WHEN 3 THEN '待退货'
+        WHEN 4 THEN '退货中'
+        WHEN 5 THEN '待收货'
+        WHEN 6 THEN '退款中'
+        WHEN 7 THEN '退款成功'
+        WHEN 8 THEN '退款失败'
+        WHEN 9 THEN '已取消'
+        ELSE '未知状态'
+        END AS statusLabel,
+        a.refund_amount AS refundAmount,
+        a.reason,
+        a.description,
+        a.carrier_name AS carrierName,
+        a.tracking_no AS trackingNo,
+        a.create_time AS createTime,
+        a.handle_time AS handleTime,
+        a.handle_note AS handleNote,
+        a.refund_time AS refundTime
+        FROM oms_order_after_sale a
+        <where>
+            <if test="memberId != null and memberId != ''">
+                AND a.member_id = #{memberId}
+            </if>
+            <if test="status != null and status != ''">
+                <choose>
+                    <when test='status.contains(",")'>
+                        AND FIND_IN_SET(a.status, #{status})
+                    </when>
+                    <otherwise>
+                        AND a.status = #{status}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="afterSaleNo != null and afterSaleNo != ''">
+                AND (a.after_sale_no LIKE CONCAT('%', #{afterSaleNo}, '%')
+            </if>
+
+            <if test="orderNo != null and orderNo != ''">
+                AND a.order_no LIKE CONCAT('%', #{orderNo}, '%'))
+            </if>
+            <if test="beginDate != null and beginDate != ''">
+                AND a.create_time &gt;= #{beginDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND a.create_time &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+            </if>
+            <if test="supplierId != null">
+                AND a.supplier_id = #{supplierId}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 一次查询获取所有售后单统计数据 -->
+    <select id="getAfterSaleStatistics" resultType="com.deko.mall.oms.model.vo.AfterSaleStatisticsVO">
+        SELECT
+        COUNT(1) AS totalCount,
+        IFNULL(SUM(refund_amount), 0) AS totalRefund,
+        SUM(CASE WHEN status = #{waitAuditStatus} THEN 1 ELSE 0 END) AS pendingAuditCount,
+        SUM(CASE WHEN status = #{waitReceiveStatus} THEN 1 ELSE 0 END) AS pendingReceiveCount,
+        SUM(CASE WHEN status = #{refundingStatus} THEN 1 ELSE 0 END) AS refundingCount
+        FROM oms_order_after_sale a
+        <include refid="baseWhere"/>
+    </select>
+
+</mapper>

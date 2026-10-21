@@ -1,0 +1,78 @@
+<template>
+    <div :style="style_container">
+        <div :style="style_img_container">
+            <div class="video re" :style="style">
+                <template v-if="isEmpty(video) && isEmpty(video_img)">
+                    <image-empty v-model="video_img" fit="contain" error-img-style="width:60px;height:60px;"></image-empty>
+                </template>
+                <template v-else>
+                    <template v-if="!isEmpty(video)">
+                        <video :src="video" controls class="w h"></video>
+                    </template>
+                    <template v-if="!isEmpty(video_img)">
+                        <div class="middle w h">
+                            <image-empty v-model="video_img" fit="contain" error-img-style="width:60px;height:60px;"></image-empty>
+                        </div>
+                    </template>
+                </template>
+                <img :src="video_src" class="middle box-shadow-sm round" width="60" height="60" />
+            </div>
+        </div>
+    </div>
+</template>
+<script setup lang="ts">
+import { common_styles_computer, common_img_computer } from '../../utils';
+import { commonStore } from '../../store';
+import { isEmpty } from 'lodash';
+const common_store = commonStore();
+/**
+ * @description: 视频 （渲染）
+ * @param value{Object} 传过来的数据，用于数据渲染
+ */
+const props = defineProps({
+    value: {
+        type: Object,
+        default: () => ({}),
+    },
+    isCommonStyle: {
+        type: Boolean,
+        default: true,
+    }
+});
+const video_src = ref(`/static/diy/images/components/model-video/video.png`);
+const style = ref('');
+const style_container = ref('');
+const style_img_container = ref('');
+const video_img = ref('');
+const video = ref('');
+watch(() => props.value,
+    (newVal, oldValue) => {
+        const new_content = newVal?.content || {};
+        const new_style = newVal?.style || {};
+        video_img.value = new_content?.video_img[0]?.url || '';
+        video.value = new_content?.video[0]?.url || '';
+
+        // 视频比例
+        let video_ratio = ``;
+        if (new_content?.video_ratio == '4:3') {
+            video_ratio = `height: 292px;`;
+        } else if (new_content?.video_ratio == '1:1') {
+            video_ratio = `height: 388px;`;
+        } else {
+            // 16:9
+            video_ratio = `height: 220px;`;
+        }
+        style.value = video_ratio;
+        if (props.isCommonStyle) {
+            style_container.value = common_styles_computer(new_style.common_style);
+            style_img_container.value = common_img_computer(new_style.common_style);
+        }
+    },
+    { immediate: true, deep: true }
+);
+</script>
+<style lang="scss" scoped>
+.video {
+    height: 22rem;
+}
+</style>

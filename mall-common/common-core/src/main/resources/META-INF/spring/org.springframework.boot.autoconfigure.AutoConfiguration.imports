@@ -1,0 +1,2 @@
+com.deko.mall.common.config.CommonCoreAutoConfiguration
+com.deko.mall.common.i18n.I18nAutoConfiguration

@@ -1,0 +1,179 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${mysql.host}:${mysql.port}/${MYSQL_DATABASE:deko_mall}?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: ${mysql.username}
+    password: ${mysql.password}
+  data:
+    redis:
+      database: ${redis.database}
+      host: ${redis.host}
+      port: ${redis.port}
+      password: ${redis.password}
+      lettuce:
+        pool:
+          min-idle: 1
+  # RabbitMQ 配置
+  rabbitmq:
+    host: ${rabbitmq.host}
+    port: ${rabbitmq.port}
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+  cache:
+    # 缓存类型 redis、none(不使用缓存)
+    type: redis
+    # 缓存时间(单位：ms)
+    redis:
+      time-to-live: 3600000
+      # 缓存null值，防止缓存穿透
+      cache-null-values: true
+  cloud:
+    sentinel:
+      enabled: false
+  freemarker:
+    # 关闭 classpath 模板文件检查（模板存 DB 而非文件）
+    check-template-location: false
+    settings:
+      # 数字格式避免本地化（1000.5 而非 1,000.5）
+      number_format: computer
+
+
+  servlet:
+    multipart:
+      enabled: true
+      #设置文件上传最大大小
+      max-file-size: 30MB
+      #设置请求最大大小
+      max-request-size: 30MB
+mybatis-plus:
+  configuration:
+    # 驼峰下划线转换
+    map-underscore-to-camel-case: true
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+
+feign:
+  sentinel:  # 开启feign对sentinel的支持
+    enabled: false
+
+# 安全配置
+security:
+  # 允许无需认证的路径列表
+  whitelist-paths:
+    # 获取系统用户的认证信息用于账号密码判读
+    - /feign-api/v1/system/{username}/authInfo
+    - /api/v1/msg/login/sms_code
+    - /api/v1/msg/register/sms_code
+    - /api/v1/files/upload
+    - /feign-api/v1/system/permissions/user/create
+    - /api/v1/files/wxacode
+        # App 端免认证接口
+    - /app-api/v1/config/common
+    - /app-api/v1/app-version/check
+
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan:
+        - com.deko.mall.system.controller
+  # Api文档信息
+  info:
+    title: Deko Mall 系统服务
+    version: ${APP_VERSION:0.1.0-SNAPSHOT}
+    description: 用户、部门、角色、菜单、字典等接口
+    contact:
+      name: Deko Mall
+      url: https://github.com/zhlog1024/deko-mall
+    license:
+      name: Apache 2.0
+      url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: false
+  setting:
+    language: zh_cn
+wx:
+  miniapp:
+    appId: ${WX_APP_ID:wx0000000000000000}
+    appSecret: ${WX_APP_SECRET:CHANGEME}
+
+
+# 默认使用 MinIO。切换阿里云 OSS 时设置 storage.type=aliyun，并配置 storage.aliyun。
+storage:
+  # 存储类型：minio（默认，自托管） | aliyun（阿里云 OSS）
+  type: ${STORAGE_TYPE:minio}
+  # MinIO 对象存储服务
+  minio:
+    # 服务 Endpoint（容器网络内为 http://minio:9000；宿主机调试用 http://localhost:9000）
+    endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+    # 访问凭据（与 docker-compose 的 MINIO_ROOT_USER 对应）
+    access-key: ${MINIO_ACCESS_KEY:deko}
+    # 凭据密钥（与 docker-compose 的 MINIO_ROOT_PASSWORD 对应）
+    secret-key: ${MINIO_SECRET_KEY:deko_minio_2024}
+    # 存储桶名称（不存在时后端会在启动时自动创建并设为可读）
+    bucket-name: ${MINIO_BUCKET:deko-mall}
+    # 自定义域名/对外前缀。配置后上传与种子资源 URL 用该前缀（永久可读）；
+    # 不配置则返回 MinIO 预签名 URL（有有效期，不适合写进装修配置）。
+    # 本机默认与 deploy/.env.example 的 MINIO_PORT=9002 对齐。
+    custom-domain: ${MINIO_CUSTOM_DOMAIN:http://127.0.0.1:9002/deko-mall}
+  # 阿里云OSS对象存储服务（可选，需自行填凭据）
+  aliyun:
+    # 服务Endpoint
+    endpoint: ${OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+    # 访问凭据
+    access-key-id: ${OSS_ACCESS_KEY_ID:CHANGEME}
+    # 凭据密钥
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET:CHANGEME}
+    # 存储桶名称
+    bucket-name: ${OSS_BUCKET:deko-mall-demo}
+
+
+
+# 短信配置
+sms:
+  type: veesing
+  # 阿里云短信
+  aliyun:
+    accessKeyId: ${OSS_ACCESS_KEY_ID:CHANGEME}
+    accessKeySecret: ${OSS_ACCESS_KEY_SECRET:CHANGEME}
+    domain: dysmsapi.aliyuncs.com
+    regionId: cn-shanghai
+    signName: 技术
+    templateCodes:
+      register: SMS_22xxx771
+      login: SMS_22xxx770
+  veesing:
+    account: C89120200
+    password: ${SMS_PASSWORD:CHANGEME}
+    url: http://106.veesing.com/webservice/sms.php?method=Submit
+
+
+# 企业微信推送配置
+wecom:
+  # 群机器人 Webhook URL
+  webhook-url: ${WECOM_WEBHOOK_URL:CHANGEME}
+
+
+# 供应商权限
+permission:
+  supplier:
+    submit:
+      role-codes: SUPPLIER_BASIC     # 改为单值字符串
+    approved:
+      role-codes: SUPPLIER_FULL      # 改为单值字符串

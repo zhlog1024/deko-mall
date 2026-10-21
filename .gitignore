@@ -1,0 +1,127 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+out/
+
+# Java / Maven
+**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
+
+# Node
+**/node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+.npm
+dist/
+unpackage/
+
+# Env & secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+!**/.env.example
+!**/.env.*.example
+deploy/.env
+deploy/**/.env
+**/application-local.yml
+**/application-local.yaml
+
+# DB dumps with PII
+*_prod*.sql
+*_local_dump*.sql
+
+# ==================== 证书 / 私钥（绝不提交）====================
+# 背景：曾误提交 mall-oms/.../wxcert/apiclient_cert.p12（真实微信支付商户证书，
+# 内含加密私钥）。教训是「证书类文件必须全局忽略」，不能只靠子目录 .gitignore。
+*.key
+*.pem
+*.p12
+*.pfx
+*.p8
+*.jks
+*.keystore
+*.cer
+*.der
+*.crt
+*.mobileprovision
+!**/static/**/*.crt
+!**/static/**/*.cer
+wxcert/
+
+# Logs & temp
+*.log
+logs/
+tmp/
+.scratch/
+.codebase-memory/
+
+# 私有源码 staging 区 —— 绝不提交
+# 全量复制私有仓到此做减法；含客户信息与生产密钥，必须在首次
+# git add 之前完成脱敏，本目录不得进入版本库。
+staging/
+
+# uni-app / HBuilder
+.hbuilderx/
+
+# ==================== 编译产物 / 构建输出 ====================
+*.class
+*.log
+logs/
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.tgz
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# ==================== IDE（Eclipse / 其他）====================
+.settings/
+.classpath
+.project
+.lingma/
+.windsurfrules
+
+# ==================== Nacos ====================
+**/nacos/bin/work/
+**/nacos/data/
+**/meta.dat
+h2.mv.db
+
+# ==================== 临时文件 ====================
+*.swp
+*.swo
+*~
+*.bak
+
+# Maven CI-friendly version metadata
+.flattened-pom.xml
+
+# Local AI / agent tooling (do not publish)
+.dsh/
+.cursor/
+AGENTS.md
+.agents/

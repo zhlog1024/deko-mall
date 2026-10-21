@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.ums.mapper.UmsMemberMapper">
+
+    <select id="selectMemberIdByMobile" resultType="com.deko.mall.ums.model.entity.UmsMember">
+        SELECT *
+        FROM ums_member
+        WHERE mobile = #{mobile}
+    </select>
+
+    <select id="selectMemberIdByUserId" resultType="com.deko.mall.ums.model.entity.UmsMember">
+        SELECT *
+        FROM ums_member
+        WHERE id = #{userId}
+    </select>
+
+    <!-- 运营后台会员分页：通用字段 -->
+    <select id="selectMemberPage" resultType="com.deko.mall.ums.model.vo.MemberVO">
+        SELECT
+            m.id,
+            m.nick_name AS nickName,
+            m.avatar_url AS avatarUrl,
+            m.mobile,
+            m.role_code AS roleCode,
+            m.tag_name AS tagName,
+            m.status,
+            m.create_time AS createTime
+        FROM ums_member m
+        <where>
+            m.deleted = 0
+            <if test="query.memberId != null">
+                AND m.id = #{query.memberId}
+            </if>
+            <if test="query.nickName != null and query.nickName.trim() != ''">
+                AND m.nick_name LIKE CONCAT('%', #{query.nickName}, '%')
+            </if>
+            <if test="query.mobile != null and query.mobile.trim() != ''">
+                AND m.mobile LIKE CONCAT('%', #{query.mobile}, '%')
+            </if>
+            <if test="query.status != null">
+                AND m.status = #{query.status}
+            </if>
+        </where>
+        ORDER BY m.create_time DESC
+    </select>
+
+    <!-- 当前登录会员信息 -->
+    <select id="getCurrentMemberInfo" resultType="com.deko.mall.ums.model.vo.MemberVO">
+        SELECT
+            m.id,
+            m.nick_name AS nickName,
+            m.avatar_url AS avatarUrl,
+            m.mobile,
+            m.role_code AS roleCode,
+            m.tag_name AS tagName,
+            m.status,
+            m.create_time AS createTime,
+            m.gender,
+            m.birthday
+        FROM ums_member m
+        WHERE m.deleted = 0
+          AND m.id = #{memberId}
+    </select>
+</mapper>

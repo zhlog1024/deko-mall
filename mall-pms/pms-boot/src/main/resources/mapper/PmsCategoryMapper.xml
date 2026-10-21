@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.deko.mall.pms.mapper.PmsCategoryMapper">
+
+    <select id="selectValidCategoriesWithProducts" resultType="com.deko.mall.pms.model.entity.PmsCategory">
+        SELECT DISTINCT c3.*
+        FROM pms_spu s
+                 INNER JOIN pms_category c3 ON s.category_id = c3.id AND c3.level = 3
+                 INNER JOIN pms_category c2 ON c3.parent_id = c2.id
+        WHERE s.audit_status = 1
+          AND s.status = 1
+          AND c3.visible = 1
+          AND s.spu_type = 'NORMAL'
+    </select>
+
+</mapper>
+
